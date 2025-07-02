@@ -1,0 +1,15 @@
+export const generes = [
+    { title: 'All', value: 'ALL' },
+    { title: 'Pop', value: 'POP' },
+    { title: 'Rock', value: 'ROCK' },
+    { title: 'K-pop', value: 'K_POP' },
+    { title: 'Hip-Hop', value: 'HIP_HOP' },
+    { title: 'Electronic', value: 'ELECTRONIC' },
+    { title: 'Country', value: 'COUNTRY' },
+    { title: 'R&B', value: 'R_B' },
+    { title: 'Jazz', value: 'JAZZ' },
+    { title: 'Classical', value: 'CLASSICAL' },
+    { title: 'Latin', value: 'LATIN' },
+    { title: 'Reggae', value: 'REGGAE' },
+    { title: 'Blues', value: 'BLUES' },
+]
