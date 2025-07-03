@@ -15,7 +15,7 @@ export default function HomePage() {
           <Discover />
           <FeaturedPlaylists />
         </div>
-        <div className="lg:hidden">
+        <div className="lg:hidden space-y-12">
           <TrendingNow />
           <RecommendedArtists />
           <GlobalCharts />

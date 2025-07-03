@@ -1,4 +1,4 @@
-export const generes = [
+export const genres = [
     { title: 'All', value: 'ALL' },
     { title: 'Pop', value: 'POP' },
     { title: 'Rock', value: 'ROCK' },

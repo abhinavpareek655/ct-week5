@@ -127,3 +127,13 @@ html {
 .hover-lift:hover {
   transform: translateY(-4px);
 }
+
+/* Song scroll button visibility */
+.song-container:hover .song-scroll-button {
+  opacity: 1 !important;
+}
+
+/* Discover section scroll button visibility */
+section:hover .song-scroll-button {
+  opacity: 1 !important;
+}

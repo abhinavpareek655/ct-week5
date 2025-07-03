@@ -44,14 +44,12 @@ export function RecommendedArtists() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <Sparkles className="w-6 h-6 text-yellow-500" />
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Recommended Artists</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Global Artists</h2>
         </div>
-        <Button variant="ghost" className="text-gray-400 hover:text-white">
-          Discover More
-        </Button>
+        
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto scrollbar-hide">
         {recommendedArtists.map((artist) => (
           <Card
             key={artist.id}

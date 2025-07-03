@@ -14,6 +14,7 @@ import { useAuth } from "@/components/auth-provider"
 import { TrendingNow } from "@/components/trending-now"
 import { GlobalArtists } from "@/components/global-artists"
 import { GlobalCharts } from "@/components/global-charts"
+import { RecommendedArtists } from "./recommended-artists"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -29,31 +30,31 @@ function SidebarContent() {
     <>
       {/* Navigation */}
       <nav className="mb-4">
-        {navigation.map((item) => {
+          {navigation.map((item) => {
           const isActive = usePathname() === item.href
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
               className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors text-base font-medium ${
-                isActive
+                  isActive
                   ? "bg-[#232323] text-white"
                   : "text-gray-300 hover:bg-[#232323] hover:text-white"
-              }`}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
-            </Link>
-          )
-        })}
-      </nav>
+                }`}
+              >
+                <item.icon className="mr-3 h-5 w-5" />
+                {item.name}
+              </Link>
+            )
+          })}
+        </nav>
       {/* Library Section */}
       <div className="mb-6 mx-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-white font-bold text-lg">Your Library</span>
           <Button size="icon" variant="ghost" className="text-white">
             <PlusCircle className="h-5 w-5" />
-          </Button>
+            </Button>
         </div>
         <div className="space-y-4">
           <div className="bg-[#232323] rounded-lg p-4">
@@ -160,7 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {isPlaying ? <MusicPlayer /> : null}
         </div>
         {/* Top Charts */}
-        <div className="w-1/4 flex-col hidden lg:block p-4 rounded-xl mt-2 mb-2 mr-2 bg-[#181818] overflow-y-auto scrollbar-hide">
+        <div className="w-1/4 flex-col hidden lg:block p-4 rounded-xl mt-2 mb-2 mr-2 bg-[#181818] overflow-y-auto scrollbar-hide py-8 space-y-12">
           <TrendingNow />
           <GlobalArtists />
           <GlobalCharts />
