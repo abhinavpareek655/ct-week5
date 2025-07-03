@@ -70,8 +70,8 @@ function SidebarContent() {
         </div>
       </div>
     </>
-  )
-}
+    )
+  }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -125,7 +125,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="flex items-center gap-4 ml-8">
-          <Link href="/auth/register" className="text-gray-400 hover:font-semibold hover:text-white hover:scale-105 transition-all duration-100">Sign up</Link>
+          {!user && (
+            <Link href="/auth/register" className="text-gray-400 hover:font-semibold hover:text-white hover:scale-105 transition-all duration-100">Sign up</Link>
+          )}
           <UserMenu />
         </div>
       </header>

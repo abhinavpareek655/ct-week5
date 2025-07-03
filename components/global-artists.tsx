@@ -1,20 +1,15 @@
-import { ArtistCard } from "@/components/ui/artist-card"
+import { ArtistCard, ArtistCardSkeleton } from "@/components/ui/artist-card"
 import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRef, useState, useEffect } from "react"
-
-const topArtists = [
-  { id: 1, name: "A. R. Rahman", image: "/placeholder-user.jpg" },
-  { id: 2, name: "Arijit Singh", image: "/placeholder-user.jpg" },
-  { id: 3, name: "Shreya Ghoshal", image: "/placeholder-user.jpg" },
-  { id: 4, name: "Pritam", image: "/placeholder-user.jpg" },
-  { id: 5, name: "Armaan Malik", image: "/placeholder-user.jpg" },
-]
+import { supabase } from "@/lib/supabaseClient"
 
 export function GlobalArtists() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
+  const [artists, setArtists] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
@@ -37,13 +32,27 @@ export function GlobalArtists() {
   }
 
   useEffect(() => {
+    async function fetchArtists() {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("Artist")
+        .select("*")
+        .order("monthly_listeners", { ascending: false })
+        .limit(10)
+      if (!error && data) setArtists(data)
+      setLoading(false)
+    }
+    fetchArtists()
+  }, [])
+
+  useEffect(() => {
     checkScrollButtons()
     const container = scrollContainerRef.current
     if (container) {
       container.addEventListener('scroll', checkScrollButtons)
       return () => container.removeEventListener('scroll', checkScrollButtons)
     }
-  }, [])
+  }, [artists])
 
   return (
     <section className="relative">
@@ -79,9 +88,27 @@ export function GlobalArtists() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2 px-2"
+          className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 px-2"
         >
-          {topArtists.map(artist => <ArtistCard key={artist.id} artist={artist} />)}
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <ArtistCardSkeleton key={i} />
+            ))
+          ) : artists.length === 0 ? (
+            <div className="text-gray-400 p-4">No artists found.</div>
+          ) : (
+            artists.map(artist => (
+              <ArtistCard 
+                key={artist.id} 
+                artist={{
+                  id: artist.id,
+                  name: artist.name,
+                  image: artist.image_url || "/placeholder-user.jpg",
+                  subtitle: artist.country
+                }} 
+              />
+            ))
+          )}
         </div>
       </div>
     </section>

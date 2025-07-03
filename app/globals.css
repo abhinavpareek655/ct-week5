@@ -137,3 +137,8 @@ html {
 section:hover .song-scroll-button {
   opacity: 1 !important;
 }
+
+/* Global charts scroll button visibility */
+section:hover .chart-scroll-button {
+  opacity: 1 !important;
+}

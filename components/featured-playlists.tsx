@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Play } from "lucide-react"
+import { Library, Play } from "lucide-react"
 import Image from "next/image"
 
 const playlists = [
@@ -38,10 +38,10 @@ export function FeaturedPlaylists() {
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-white">Featured Playlists</h2>
-        <Button variant="ghost" className="text-gray-400 hover:text-white">
-          Show all
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Library className="w-6 h-6 text-blue-500" />
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Featured Playlists</h2>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

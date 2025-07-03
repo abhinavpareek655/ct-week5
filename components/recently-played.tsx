@@ -49,9 +49,6 @@ export function RecentlyPlayed() {
           <Clock className="w-6 h-6 text-green-500" />
           <h2 className="text-2xl md:text-3xl font-bold text-white">Recently Played</h2>
         </div>
-        <Button variant="ghost" className="text-gray-400 hover:text-white">
-          Show all
-        </Button>
       </div>
 
       <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">

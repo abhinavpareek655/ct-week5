@@ -3,8 +3,8 @@ import { FeaturedPlaylists } from "@/components/featured-playlists"
 import { TrendingNow } from "@/components/trending-now"
 import { GlobalCharts } from "@/components/global-charts"
 import { RecentlyPlayed } from "@/components/recently-played"
-import { RecommendedArtists } from "@/components/recommended-artists"
 import { Discover } from "@/components/discover"
+import { GlobalArtists } from "@/components/global-artists"
 
 export default function HomePage() {
   return (
@@ -17,7 +17,7 @@ export default function HomePage() {
         </div>
         <div className="lg:hidden space-y-12">
           <TrendingNow />
-          <RecommendedArtists />
+          <GlobalArtists />
           <GlobalCharts />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu"
 import { SongCard, SongCardSkeleton } from "@/components/ui/song-card"
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Binoculars } from "lucide-react"
 
 type Song = {
   id: number
@@ -76,7 +76,10 @@ export function Discover() {
     return (
         <section>
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-white">Discover</h2>
+                <div className="flex items-center space-x-3">
+                    <Binoculars className="w-6 h-6 text-purple-500" />
+                    <h2 className="text-2xl md:text-3xl font-bold text-white">Discover</h2>
+                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="text-gray-400 hover:text-white">

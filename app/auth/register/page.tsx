@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabaseClient"
 import { Eye, EyeOff, Mail, Lock, User, Music } from "lucide-react"
+import md5 from "md5"
+
+const gravatarUrl = (email: string) =>
+  `https://www.gravatar.com/avatar/${md5(email.trim().toLowerCase())}?d=identicon`
 
 export default function RegisterPage() {
   const [name, setName] = useState("")
@@ -47,7 +51,16 @@ export default function RegisterPage() {
         password,
         options: {
           data: {
-            name: name,
+            full_name: name,
+            avatar_url: gravatarUrl(email),
+            is_verified: false,
+            subscription_status: "free",
+            last_login: new Date().toISOString(),
+            country: await fetch("https://ipapi.co/json/")
+              .then(res => res.json())
+              .then(data => data.country_name || "")
+              .catch(() => ""),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
         },
       })
@@ -55,8 +68,29 @@ export default function RegisterPage() {
       if (error) {
         setError(error.message)
       } else {
+        const user = data.user;
+        if (user) {
+          // Prepare the update fields
+          const updateFields: any = {
+            full_name: name,
+            avatar_url: gravatarUrl(email),
+            is_verified: false,
+            subscription_status: "free",
+            last_login: new Date().toISOString(),
+            country: await fetch("https://ipapi.co/json/")
+              .then(res => res.json())
+              .then(data => data.country_name || "")
+              .catch(() => ""),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          };
+          // Prefer updating by id, fallback to email if id is not present
+          if (user.id) {
+            await supabase.from('User').update(updateFields).eq('id', user.id);
+          } else if (user.email) {
+            await supabase.from('User').update(updateFields).eq('email', user.email);
+          }
+        }
         setSuccess("Registration successful! Please check your email to verify your account.")
-        // Optionally redirect to login page after a delay
         setTimeout(() => {
           router.push("/auth/login")
         }, 3000)
@@ -91,19 +125,27 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo and Brand */}
+        <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <Music className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+              <Music className="w-6 h-6 text-black" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Create Account</CardTitle>
-          <CardDescription className="text-gray-400">
-            Sign up to start your musical journey
-          </CardDescription>
-        </CardHeader>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Lyrics</h1>
+          <p className="text-gray-400 mt-2">Next-Generation Music Streaming</p>
+        </div>
+
+        {/* Register Card */}
+        <Card className="bg-[#181818] border-[#232323] rounded-xl">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl font-bold text-white">Create Account</CardTitle>
+            <CardDescription className="text-gray-400">
+              Sign up to start your musical journey
+            </CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           {error && (
             <Alert className="bg-red-500/10 border-red-500/20">
@@ -119,7 +161,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">
+              <Label htmlFor="name" className="text-white text-sm font-medium">
                 Full Name
               </Label>
               <div className="relative">
@@ -130,14 +172,14 @@ export default function RegisterPage() {
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  className="pl-10 bg-[#232323] border-[#232323] text-white placeholder:text-gray-400 hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] focus:border-white/20"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">
+              <Label htmlFor="email" className="text-white text-sm font-medium">
                 Email
               </Label>
               <div className="relative">
@@ -148,14 +190,14 @@ export default function RegisterPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  className="pl-10 bg-[#232323] border-[#232323] text-white placeholder:text-gray-400 hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] focus:border-white/20"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">
+              <Label htmlFor="password" className="text-white text-sm font-medium">
                 Password
               </Label>
               <div className="relative">
@@ -166,7 +208,7 @@ export default function RegisterPage() {
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  className="pl-10 pr-10 bg-[#232323] border-[#232323] text-white placeholder:text-gray-400 hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] focus:border-white/20"
                   required
                 />
                 <Button
@@ -186,7 +228,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-white">
+              <Label htmlFor="confirmPassword" className="text-white text-sm font-medium">
                 Confirm Password
               </Label>
               <div className="relative">
@@ -197,7 +239,7 @@ export default function RegisterPage() {
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  className="pl-10 pr-10 bg-[#232323] border-[#232323] text-white placeholder:text-gray-400 hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] focus:border-white/20"
                   required
                 />
                 <Button
@@ -218,7 +260,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="w-full bg-white text-black font-bold hover:bg-gray-200 transition-colors"
               disabled={isLoading}
             >
               {isLoading ? "Creating account..." : "Create Account"}
@@ -227,16 +269,16 @@ export default function RegisterPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-white/20" />
+              <span className="w-full border-t border-[#232323]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white/10 px-2 text-gray-400">Or continue with</span>
+              <span className="bg-[#181818] px-2 text-gray-400">Or continue with</span>
             </div>
           </div>
 
           <Button
             variant="outline"
-            className="w-full border-white/20 text-white hover:bg-white/10"
+            className="w-full border-[#232323] text-white hover:bg-[#232323]"
             onClick={handleGoogleRegister}
             disabled={isLoading}
           >
@@ -265,13 +307,14 @@ export default function RegisterPage() {
             <span className="text-gray-400">Already have an account? </span>
             <Link
               href="/auth/login"
-              className="text-purple-400 hover:text-purple-300 font-medium"
+              className="text-white hover:text-gray-300 font-medium"
             >
               Sign in
             </Link>
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
-} 
+}
