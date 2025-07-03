@@ -8,12 +8,14 @@ import { Discover } from "@/components/discover"
 
 export default function HomePage() {
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div>
       <div className="space-y-8 pb-24">
-        <div className="px-4 md:px-6 lg:px-8 space-y-12">
+        <div className="space-y-12">
           <RecentlyPlayed />
           <Discover />
           <FeaturedPlaylists />
+        </div>
+        <div className="lg:hidden">
           <TrendingNow />
           <RecommendedArtists />
           <GlobalCharts />

@@ -54,48 +54,28 @@ export function SongCard({
 
   if (variant === "compact") {
     return (
-      <Card className={`bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-300 group ${className}`}>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Image
-                src={song.coverUrl || "/placeholder.svg"}
-                alt={song.title}
-                width={60}
-                height={60}
-                className="rounded-lg shadow-lg"
-              />
-              {showPlayButton && (
-                <Button
-                  size="icon"
-                  onClick={handlePlay}
-                  className="absolute inset-0 bg-black/50 hover:bg-black/70 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300"
-                >
-                  <Play className="w-4 h-4 text-white" />
-                </Button>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-white truncate">{song.title}</h3>
-              <p className="text-gray-400 text-sm truncate">{song.artist}</p>
-              {showMetadata && song.album && (
-                <p className="text-gray-500 text-xs truncate">{song.album}</p>
-              )}
-              {showMetadata && song.duration && (
-                <p className="text-gray-500 text-xs">{song.duration}</p>
-              )}
-            </div>
-            {showActions && (
-              <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white" onClick={handleLike}>
-                  <Heart className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white" onClick={handleMore}>
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </div>
+      <Card className={`group bg-[#181818] rounded-xl shadow-md hover:shadow-xl transition-all duration-200 w-44 flex-shrink-0 cursor-pointer ${className}`}>
+        <CardContent className="p-4 flex flex-col items-center">
+          <div className="relative w-full aspect-square mb-4">
+            <Image
+              src={song.coverUrl || "/placeholder.svg"}
+              alt={song.title}
+              width={160}
+              height={160}
+              className="rounded-lg object-cover w-full h-full"
+            />
+            {showPlayButton && (
+              <Button
+                size="icon"
+                className="absolute bottom-2 right-2 bg-green-500 hover:bg-green-600 rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                onClick={handlePlay}
+              >
+                <Play className="w-4 h-4 text-white" />
+              </Button>
             )}
           </div>
+          <h3 className="font-semibold text-white text-base mb-1 w-full truncate text-center">{song.title}</h3>
+          <p className="text-gray-400 text-sm w-full truncate text-center">{song.artist}</p>
         </CardContent>
       </Card>
     )

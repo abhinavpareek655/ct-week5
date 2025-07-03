@@ -7,152 +7,165 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Home, Search, Library, Heart, PlusCircle, Menu, X, Music, Mic2, TrendingUp, User } from "lucide-react"
+import { Home, Search, Hash, Image, Heart, PlusCircle, Menu, X, Music, Users, TrendingUp } from "lucide-react"
 import { MusicPlayer } from "@/components/music-player"
+import { UserMenu } from "@/components/user-menu"
+import { useAuth } from "@/components/auth-provider"
+import { TrendingNow } from "@/components/trending-now"
+import { GlobalArtists } from "@/components/global-artists"
+import { GlobalCharts } from "@/components/global-charts"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
-  { name: "Search", href: "/search", icon: Search },
-  { name: "Lyrics", href: "/lyrics", icon: Mic2 },
-  { name: "Library", href: "/library", icon: Library },
-  { name: "Trending", href: "/trending", icon: TrendingUp },
+  { name: "Around You", href: "/search", icon: Image },
+  { name: "Top Artists", href: "/lyrics", icon: Users },
+  { name: "Top Charts", href: "/library", icon: Hash },
 ]
 
 const playlists = ["Liked Songs", "My Playlist #1", "Chill Vibes", "Workout Mix", "Road Trip"]
 
+function SidebarContent() {
+  return (
+    <>
+      {/* Navigation */}
+      <nav className="mb-4">
+        {navigation.map((item) => {
+          const isActive = usePathname() === item.href
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center px-4 py-3 mb-2 rounded-lg transition-colors text-base font-medium ${
+                isActive
+                  ? "bg-[#232323] text-white"
+                  : "text-gray-300 hover:bg-[#232323] hover:text-white"
+              }`}
+            >
+              <item.icon className="mr-3 h-5 w-5" />
+              {item.name}
+            </Link>
+          )
+        })}
+      </nav>
+      {/* Library Section */}
+      <div className="mb-6 mx-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white font-bold text-lg">Your Library</span>
+          <Button size="icon" variant="ghost" className="text-white">
+            <PlusCircle className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-[#232323] rounded-lg p-4">
+            <div className="text-white font-semibold mb-1">Create your first playlist</div>
+            <div className="text-gray-400 text-sm mb-3">It's easy, we'll help you</div>
+            <Button className="bg-white text-black font-bold rounded-full px-4 py-2 w-fit">Create playlist</Button>
+          </div>
+          <div className="bg-[#232323] rounded-lg p-4">
+            <div className="text-white font-semibold mb-1">Let's find some podcasts to follow</div>
+            <div className="text-gray-400 text-sm mb-3">We'll keep you updated on new episodes</div>
+            <Button className="bg-white text-black font-bold rounded-full px-4 py-2 w-fit">Browse podcasts</Button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentSong, setCurrentSong] = useState<any>(null)
+  const [currentSongProgress, setCurrentSongProgress] = useState(0)
+  const [volume, setVolume] = useState(0.5)
+  const [isMuted, setIsMuted] = useState(false)
+  const [isShuffle, setIsShuffle] = useState(false)
+  const [isRepeat, setIsRepeat] = useState(false) 
   const pathname = usePathname()
+  const { user } = useAuth()
+  
+  // Check if current path is an auth page
+  const isAuthPage = pathname?.startsWith('/auth/')
 
-  return (
-    <div className="h-screen flex overflow-hidden bg-black">
-      {/* Mobile sidebar */}
-      <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? "" : "pointer-events-none"}`}>
-        <div
-          className={`fixed inset-0 bg-black/50 transition-opacity ${sidebarOpen ? "opacity-100" : "opacity-0"}`}
-          onClick={() => setSidebarOpen(false)}
-        />
-        <div
-          className={`relative flex-1 flex flex-col max-w-xs w-full bg-gradient-to-b from-slate-900 to-slate-800 transform transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        >
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <Button variant="ghost" size="icon" className="text-white" onClick={() => setSidebarOpen(false)}>
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
-          <SidebarContent />
-        </div>
-      </div>
-
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <div className="flex flex-col flex-grow bg-gradient-to-b from-slate-900 to-slate-800 overflow-y-auto">
-            <SidebarContent />
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top navigation */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-black/50 backdrop-blur-md border-b border-white/10">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="px-4 text-white md:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <div className="relative w-full max-w-lg">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Input
-                    className="block w-full pl-10 pr-3 py-2 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-full"
-                    placeholder="Search..."
-                    type="search"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <Button variant="ghost" size="icon" className="text-white">
-                <User className="h-6 w-6" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Page content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">{children}</main>
-
-        {/* Music Player */}
-        <MusicPlayer />
-      </div>
-    </div>
-  )
-
-  function SidebarContent() {
+  if (isAuthPage) {
     return (
-      <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
-        <div className="flex items-center flex-shrink-0 px-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Music className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">Lyrics</span>
-          </div>
-        </div>
-        <nav className="mt-8 flex-1 px-2 space-y-1">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isActive
-                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border-r-2 border-purple-500"
-                    : "text-gray-300 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            )
-          })}
-        </nav>
-
-        <div className="mt-8 px-2">
-          <div className="flex items-center justify-between px-2 py-2">
-            <span className="text-sm font-medium text-gray-400 uppercase tracking-wider">Your Library</span>
-            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white w-6 h-6">
-              <PlusCircle className="w-4 h-4" />
-            </Button>
-          </div>
-          <nav className="mt-2 space-y-1">
-            {playlists.map((playlist) => (
-              <Link
-                key={playlist}
-                href="#"
-                className="group flex items-center px-2 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-md transition-colors"
-              >
-                {playlist === "Liked Songs" ? (
-                  <Heart className="mr-3 h-4 w-4 text-green-500" />
-                ) : (
-                  <Music className="mr-3 h-4 w-4" />
-                )}
-                {playlist}
-              </Link>
-            ))}
-          </nav>
-        </div>
+      <div>
+        {children}
       </div>
     )
   }
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-2 sm:px-8 py-4 bg-black rounded-t-xl">        
+        <div className="flex items-center">
+          <button
+            className="flex lg:hidden md:hidden items-center justify-center w-10 h-10 rounded-full bg-[#232323] text-white focus:outline-none mr-2 sm:mr-8"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+          <Menu className="w-6 h-6" />
+        </button>
+          <Link href="/" className="flex items-center">
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+              <Music className="w-5 h-5 text-black" />
+            </div>
+            <span className="ml-3 text-2xl font-bold text-white tracking-tight hidden sm:block">Lyrics</span>
+          </Link>
+          <div className="relative ml-2 sm:ml-8 w-40 sm:w-72 md:w-96 lg:w-[32rem] xl:w-[40rem]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search className="h-5 w-5" />
+            </span>
+            <Input
+              className="w-full pl-12 pr-4 py-3 rounded-full bg-[#181818] border-none text-white placeholder-gray-400 hover:bg-[#232323] transition-colors duration-300 focus:bg-[#232323]"
+              placeholder="Search"
+              type="search"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 ml-8">
+          <Link href="/auth/register" className="text-gray-400 hover:font-semibold hover:text-white hover:scale-105 transition-all duration-100">Sign up</Link>
+          <UserMenu />
+        </div>
+      </header>
+
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} lg:hidden`}
+        onClick={() => setSidebarOpen(false)}
+      />
+      {/* Mobile Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-[#121212] rounded-r-xl shadow-lg transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:hidden`}
+      >
+        <div className="flex items-center justify-between p-4">
+          <span className="text-white font-bold text-lg">Menu</span>
+          <Button size="icon" variant="ghost" className="text-white" onClick={() => setSidebarOpen(false)}>
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
+        <SidebarContent />
+      </aside>
+
+      <div className="h-screen flex bg-black">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex flex-col w-80 p-4 bg-[#121212] rounded-xl m-2 mr-0 min-h-[calc(100vh-16px)]">
+          <SidebarContent />
+        </aside>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <main className="flex-1 bg-[#181818] rounded-xl m-2 p-8 overflow-y-auto scrollbar-hide">
+            {children}
+          </main>
+          {isPlaying ? <MusicPlayer /> : null}
+        </div>
+        {/* Top Charts */}
+        <div className="w-1/4 flex-col hidden lg:block p-4 rounded-xl mt-2 mb-2 mr-2 bg-[#181818] overflow-y-auto scrollbar-hide">
+          <TrendingNow />
+          <GlobalArtists />
+          <GlobalCharts />
+        </div>
+      </div>
+    </>
+  )
 }

@@ -33,13 +33,12 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <Button
-        variant="ghost"
-        className="text-gray-400 hover:text-white"
+      <button
+        className="bg-white rounded-full px-8 py-3 text-black font-bold transition-all duration-100 hover:bg-white/90 hover:scale-105"
         onClick={() => router.push("/auth/login")}
       >
         Log In
-      </Button>
+      </button>
     )
   }
 
