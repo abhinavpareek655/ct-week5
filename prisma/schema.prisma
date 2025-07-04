@@ -24,6 +24,7 @@ model Song {
   audioUrl String
   plays    Int
   Lyric    Lyric[]
+  PlayHistory PlayHistory[]
 }
 
 model Lyric {
@@ -33,4 +34,15 @@ model Lyric {
   content    String
   synced     Boolean @default(false)
   timestamps Json? // For synced lyrics
+}
+
+model PlayHistory {
+  id        Int      @id @default(autoincrement())
+  userId    String   // Supabase auth user ID
+  songId    Int
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  playedAt  DateTime @default(now())
+  
+  @@unique([userId, songId, playedAt])
+  @@index([userId, playedAt])
 }
