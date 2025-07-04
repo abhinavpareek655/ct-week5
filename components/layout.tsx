@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Home, Search, Hash, Image, Heart, PlusCircle, Menu, X, Music, Users, TrendingUp } from "lucide-react"
-import { MusicPlayer } from "@/components/music-player"
+import { MusicPlayer, useMusicPlayer } from "@/components/music-player"
 import { UserMenu } from "@/components/user-menu"
 import { useAuth } from "@/components/auth-provider"
 import { TrendingNow } from "@/components/trending-now"
@@ -75,15 +75,9 @@ function SidebarContent() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentSong, setCurrentSong] = useState<any>(null)
-  const [currentSongProgress, setCurrentSongProgress] = useState(0)
-  const [volume, setVolume] = useState(0.5)
-  const [isMuted, setIsMuted] = useState(false)
-  const [isShuffle, setIsShuffle] = useState(false)
-  const [isRepeat, setIsRepeat] = useState(false) 
   const pathname = usePathname()
   const { user } = useAuth()
+  const { isPlaying, currentSong } = useMusicPlayer();
   
   // Check if current path is an auth page
   const isAuthPage = pathname?.startsWith('/auth/')
@@ -156,11 +150,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <SidebarContent />
         </aside>
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           <main className="flex-1 bg-[#181818] rounded-xl m-2 p-8 overflow-y-auto scrollbar-hide">
             {children}
           </main>
-          {isPlaying ? <MusicPlayer /> : null}
         </div>
         {/* Top Charts */}
         <div className="w-1/4 flex-col hidden lg:block p-4 rounded-xl mt-2 mb-2 mr-2 bg-[#181818] overflow-y-auto scrollbar-hide py-8 space-y-12">
@@ -169,6 +162,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <GlobalCharts />
         </div>
       </div>
+      {/* Global Music Player: fixed at bottom, always visible when playing */}
+      {isPlaying && currentSong && (
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
+          <MusicPlayer song={currentSong} isPlaying={isPlaying} />
+        </div>
+      )}
     </>
   )
 }

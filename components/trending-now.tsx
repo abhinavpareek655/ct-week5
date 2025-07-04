@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge"
 import { Play, TrendingUp, Heart, MoreHorizontal } from "lucide-react"
 import Image from "next/image"
 import { supabase } from "@/lib/supabaseClient"
+import { useMusicPlayer } from "@/components/music-player"
 
 export function TrendingNow() {
   const [songs, setSongs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { playSong } = useMusicPlayer();
 
   useEffect(() => {
     async function fetchTrendingSongs() {
@@ -49,10 +51,16 @@ export function TrendingNow() {
                 song={song} 
                 variant="compact" 
                 showActions={true}
-                onPlay={(songId) => console.log('Play song:', songId)}
+                onPlay={() => playSong({
+                  ...song,
+                  id: String(song.id)
+                })}
                 onLike={(songId) => console.log('Like song:', songId)}
                 onMore={(songId) => console.log('More options for song:', songId)}
-                onClick={(songId) => console.log('Card clicked:', songId)}
+                onClick={() => playSong({
+                  ...song,
+                  id: String(song.id)
+                })}
               />
             ))
           )}

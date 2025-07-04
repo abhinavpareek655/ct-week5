@@ -6,6 +6,7 @@ import { SongCard, SongCardSkeleton } from "@/components/ui/song-card"
 import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import { ChevronLeft, ChevronRight, Binoculars } from "lucide-react"
+import { useMusicPlayer } from "@/components/music-player"
 
 type Song = {
   id: number
@@ -25,6 +26,7 @@ export function Discover() {
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
+    const { playSong } = useMusicPlayer();
 
     const checkScrollButtons = () => {
         if (scrollContainerRef.current) {
@@ -142,6 +144,10 @@ export function Discover() {
                                     song={song} 
                                     variant="default"
                                     showMetadata={true}
+                                    onClick={() => playSong({
+                                        ...song,
+                                        id: String(song.id) // ensure id is string for player
+                                    })}
                                 />
                             ))
                         ) : (
