@@ -7,19 +7,17 @@
 
 ## Overview
 
-**Lyrics** is a modern, visually immersive music streaming web application built with Next.js, React, and Tailwind CSS. The project aims to deliver a next-generation listening experience, featuring synchronized lyrics, personalized recommendations, trending charts, and a sleek, responsive UI. The app is designed to be both a showcase of UI/UX best practices and a foundation for a full-featured music streaming platform.
+**Lyrics** is a modern, visually immersive music streaming web application built with Next.js, React, Tailwind CSS, and Supabase. The project delivers a next-generation listening experience, featuring synchronized lyrics, personalized recommendations, trending charts, playlists, liked songs, and a sleek, responsive UI. The app is designed to be both a showcase of UI/UX best practices and a foundation for a full-featured music streaming platform.
 
 ---
 
 ## Features
 
-### Currently Working
-
 - **Home Dashboard**:  
   - Hero section with project highlights and call-to-action.
   - Featured Playlists: Curated playlists with cover art and descriptions.
   - Trending Now: List of currently popular songs.
-  - Recently Played: Carousel of recently played tracks.
+  - Recently Played: Carousel of recently played tracks (per user).
   - Recommended Artists: Suggestions based on user taste.
   - Global Charts: Top songs by country.
 
@@ -37,6 +35,20 @@
 - **Music Player**:  
   - Persistent player UI with playback controls.
   - Song info, progress bar, volume, and favorite button.
+  - Like/unlike songs (persisted to Supabase).
+  - Add songs to playlists.
+
+- **Playlists**:  
+  - Create, view, and manage personal playlists.
+  - Add/remove songs from playlists.
+  - Public playlists: Browse and play community playlists.
+  - Sidebar access to liked songs and playlists.
+
+- **Recently Played & Play History**:  
+  - Tracks and displays user's recently played songs.
+
+- **Authentication**:  
+  - Supabase Auth for user sign-up, login, and session management.
 
 - **UI/UX**:  
   - Responsive design for desktop and mobile.
@@ -45,16 +57,14 @@
 
 ---
 
-## Hardcoded Elements & Placeholder Data
+## Data & Backend
 
-> **Note:** The current version is a UI prototype. All music data is hardcoded and uses placeholder images.
-
-- **Songs, Playlists, Artists, Albums, Charts**:  
-  All lists and details (titles, artists, covers, etc.) are static arrays in component files (e.g., `featured-playlists.tsx`, `recently-played.tsx`, `global-charts.tsx`, `recommended-artists.tsx`, `trending-now.tsx`, `music-player.tsx`, `lyrics/page.tsx`, `search/page.tsx`).
-- **Images**:  
-  All cover art and artist images use `/placeholder.svg` or similar placeholder assets.
-- **No Real Backend/API**:  
-  There is no real authentication, user data, or music streaming backend. All interactivity is local and for demonstration only.
+- **Supabase** is used for:
+  - Database (PostgreSQL)
+  - Authentication (users, sessions)
+  - Row Level Security (RLS) for user data privacy
+  - Real-time updates (where applicable)
+- **All music data, playlists, likes, and play history are persisted in the database.**
 
 ---
 
@@ -62,19 +72,15 @@
 
 The following features are **not yet implemented** but are logical next steps for future development:
 
-- **Real Data Integration**:  
-  - Connect to a real music API for dynamic content.
-  - Implement user authentication and personalized data.
-- **Full Playback Functionality**:  
-  - Stream real audio tracks.
-  - Advanced player features (queue, shuffle, repeat, etc.).
-- **User Library**:  
-  - Save favorite songs, playlists, and artists.
-  - User-created playlists and history.
-- **Lyrics Sync**:  
-  - Real-time, accurate lyric synchronization with music playback.
+- **Real Audio Streaming**:  
+  - Stream real audio tracks (currently uses demo/sample audio).
+- **Advanced Playback**:  
+  - Queue, shuffle, repeat, crossfade, and gapless playback.
+- **User Library Enhancements**:  
+  - Download songs for offline listening.
+  - Song/album/artist following and notifications.
 - **Social Features**:  
-  - User profiles, sharing, and following.
+  - User profiles, sharing, following, and collaborative playlists.
 - **Settings & Themes**:  
   - User preferences, dark/light mode toggling.
 - **Accessibility Improvements**:  
@@ -84,59 +90,9 @@ The following features are **not yet implemented** but are logical next steps fo
 
 ---
 
-## Getting Started
+## Documentation
 
-### Prerequisites
-
-- Node.js (v18+ recommended)
-- pnpm (or npm/yarn)
-
-### Installation
-
-```bash
-pnpm install
-# or
-npm install
-# or
-yarn install
-```
-
-### Development
-
-```bash
-pnpm dev
-# or
-npm run dev
-# or
-yarn dev
-```
-
-Visit [http://localhost:3000](http://localhost:3000) to view the app.
-
----
-
-## Contributing
-
-Contributions are welcome!  
-If you'd like to help, consider:
-
-- Refactoring components for reusability.
-- Replacing hardcoded data with API calls.
-- Improving accessibility and responsiveness.
-- Adding new features or fixing bugs.
-
-Please open an issue or pull request to discuss your ideas.
-
----
-
-## Project Structure
-
-- `app/` - Next.js app directory (pages, layouts, routes)
-- `components/` - UI and feature components
-- `hooks/` - Custom React hooks
-- `lib/` - Utility functions
-- `public/` - Static assets (images, placeholders)
-- `styles/` - Global and Tailwind CSS files
+- **Database schema, API endpoints, and feature documentation are available in the [docs/](./docs/) folder.**
 
 ---
 
