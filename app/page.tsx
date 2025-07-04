@@ -1,19 +1,21 @@
 "use client"
-import { FeaturedPlaylists } from "@/components/featured-playlists"
 import { TrendingNow } from "@/components/trending-now"
 import { GlobalCharts } from "@/components/global-charts"
 import { RecentlyPlayed } from "@/components/recently-played"
 import { Discover } from "@/components/discover"
 import { GlobalArtists } from "@/components/global-artists"
+import { PublicPlaylists } from "@/components/public-playlists"
+import { TestLikeFeature } from "@/components/test-like-feature"
 
 export default function HomePage() {
   return (
     <div>
       <div className="space-y-8 pb-24">
         <div className="space-y-12">
+          <TestLikeFeature />
           <RecentlyPlayed />
           <Discover />
-          <FeaturedPlaylists />
+          <PublicPlaylists />
         </div>
         <div className="lg:hidden space-y-12">
           <TrendingNow />

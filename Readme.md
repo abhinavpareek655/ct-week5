@@ -1,5 +1,10 @@
 # Lyrics - Next-Generation Music Streaming
 
+> **For full setup, database, and feature documentation, see the [docs/](./docs/) folder:**
+> - [Supabase Setup Guide](./docs/supabase-setup-guide.md)
+> - [Database Schema & Security](./docs/database-schema.md)
+> - [Music Player Features](./docs/music-player-features.md)
+
 ## Overview
 
 **Lyrics** is a modern, visually immersive music streaming web application built with Next.js, React, and Tailwind CSS. The project aims to deliver a next-generation listening experience, featuring synchronized lyrics, personalized recommendations, trending charts, and a sleek, responsive UI. The app is designed to be both a showcase of UI/UX best practices and a foundation for a full-featured music streaming platform.

@@ -1,5 +1,9 @@
 # Music Player Features
 
+> **Note:** All features described here are backed by the unified database schema and Row Level Security (RLS) policies described in [Database Schema & Security Documentation](./database-schema.md) and [Supabase Setup Guide](./supabase-setup-guide.md).
+
+---
+
 ## New Features Implemented
 
 ### 1. Like/Unlike Songs ❤️

@@ -33,6 +33,17 @@ export interface Album {
   cover_url?: string
 }
 
+// Playlist type
+export interface Playlist {
+  id: number
+  name: string
+  description?: string
+  cover_url?: string
+  is_public: boolean
+  created_at: string
+  song_count?: number
+}
+
 interface MusicPlayerContextType {
   currentSong: Song | null
   isPlaying: boolean
@@ -44,6 +55,8 @@ interface MusicPlayerContextType {
   isShuffling: boolean
   isFullscreen: boolean
   isLiked: boolean
+  playlists: Playlist[]
+  playlistsLoading: boolean
   playSong: (song: Song) => void
   pause: () => void
   resume: () => void
@@ -57,7 +70,9 @@ interface MusicPlayerContextType {
   toggleFullscreen: () => void
   toggleLike: () => void
   addToAlbum: (albumId: string) => void
+  addToPlaylist: (playlistId: number) => void
   refreshRecentlyPlayed: () => void
+  refreshPlaylists: () => void
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined)
@@ -76,6 +91,8 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
   const [isLiked, setIsLiked] = useState(false)
   const [albums, setAlbums] = useState<Album[]>([])
   const [albumsLoading, setAlbumsLoading] = useState(true)
+  const [playlists, setPlaylists] = useState<Playlist[]>([])
+  const [playlistsLoading, setPlaylistsLoading] = useState(true)
   const [recentlyPlayedRefresh, setRecentlyPlayedRefresh] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
@@ -198,6 +215,46 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     }
     fetchAlbums()
   }, [])
+
+  // Fetch playlists on mount and when user changes
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      if (!user?.id) {
+        setPlaylists([])
+        setPlaylistsLoading(false)
+        return
+      }
+
+      try {
+        setPlaylistsLoading(true)
+        const { data: { session } } = await supabase.auth.getSession()
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        }
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`
+        }
+
+        const response = await fetch('/api/playlists', {
+          headers
+        })
+        
+        if (response.ok) {
+          const playlistsData = await response.json()
+          setPlaylists(Array.isArray(playlistsData) ? playlistsData : [])
+        } else {
+          console.error('Failed to fetch playlists:', response.statusText)
+          setPlaylists([])
+        }
+      } catch (error) {
+        console.error('Error fetching playlists:', error)
+        setPlaylists([])
+      } finally {
+        setPlaylistsLoading(false)
+      }
+    }
+    fetchPlaylists()
+  }, [user?.id])
 
   // Check if current song is liked
   useEffect(() => {
@@ -381,8 +438,55 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     }
   }, [currentSong, user, albums, toast])
   
+  const addToPlaylist = useCallback(async (playlistId: number) => {
+    if (!currentSong || !user) return
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+      
+      const response = await fetch('/api/playlists/add-song', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          playlistId,
+          songId: currentSong.id 
+        }),
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        const playlist = playlists.find(p => p.id === playlistId)
+        toast({
+          title: 'Added to playlist',
+          description: `${currentSong.title} added to ${playlist?.name || 'playlist'}`,
+        })
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add to playlist')
+      }
+    } catch (error) {
+      console.error('Error adding to playlist:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add song to playlist',
+        variant: 'destructive',
+      })
+    }
+  }, [currentSong, user, playlists, toast])
+  
   const refreshRecentlyPlayed = useCallback(() => {
     setRecentlyPlayedRefresh(prev => prev + 1)
+  }, [])
+  
+  const refreshPlaylists = useCallback(() => {
+    // Trigger playlist refresh by updating user dependency
+    setPlaylistsLoading(true)
   }, [])
 
   // Keyboard shortcuts
@@ -462,12 +566,13 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     <MusicPlayerContext.Provider value={{
       currentSong, isPlaying, duration, progress,
       volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
+      playlists, playlistsLoading,
       playSong, pause, resume, seekTo, setVolumeLevel, toggleMute,
       skipBack, skipForward, toggleLoop, toggleShuffle, toggleFullscreen,
-      toggleLike, addToAlbum, refreshRecentlyPlayed
+      toggleLike, addToAlbum, addToPlaylist, refreshRecentlyPlayed, refreshPlaylists
     }}>
       {children}
-      {currentSong && <MusicPlayerUI albums={albums || []} />}
+      {currentSong && <MusicPlayerUI albums={albums || []} playlists={playlists || []} />}
     </MusicPlayerContext.Provider>
   )
 }
@@ -479,14 +584,17 @@ export function useMusicPlayer() {
 }
 
 // UI Component
-function MusicPlayerUI({ albums }: { albums: Album[] }) {
+function MusicPlayerUI({ albums, playlists }: { albums: Album[], playlists: Playlist[] }) {
   const {
     currentSong: song, isPlaying, duration, progress,
     volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
     pause, resume, seekTo, setVolumeLevel, toggleMute, skipBack, skipForward,
-    toggleLoop, toggleShuffle, toggleFullscreen, toggleLike, addToAlbum
+    toggleLoop, toggleShuffle, toggleFullscreen, toggleLike, addToAlbum, addToPlaylist
   } = useMusicPlayer()
   const formatTime = (sec: number) => `${Math.floor(sec/60)}:${Math.floor(sec%60).toString().padStart(2,'0')}`
+  
+  // Early return if no song is playing
+  if (!song) return null
   
   if (isFullscreen) {
     return (
@@ -577,7 +685,7 @@ function MusicPlayerUI({ albums }: { albums: Album[] }) {
                     <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
                   </Button>
                   
-                  <AddToAlbumDialog albums={albums || []} onAddToAlbum={addToAlbum} />
+                  <AddToPlaylistDialog playlists={playlists || []} onAddToPlaylist={addToPlaylist} />
                   
                   <Button variant="ghost" size="icon" onClick={toggleMute}>
                     {isMuted || volume === 0 ? 
@@ -619,7 +727,7 @@ function MusicPlayerUI({ albums }: { albums: Album[] }) {
           >
             <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
           </Button>
-          <AddToAlbumDialog albums={albums || []} onAddToAlbum={addToAlbum} />
+          <AddToPlaylistDialog playlists={playlists || []} onAddToPlaylist={addToPlaylist} />
         </div>
         {/* Controls */}
         <div className="flex flex-col items-center flex-1 max-w-md mx-8 space-y-2">
@@ -667,23 +775,23 @@ function MusicPlayerUI({ albums }: { albums: Album[] }) {
   )
 }
 
-// Add to Album Dialog Component
-function AddToAlbumDialog({ albums, onAddToAlbum }: { albums: Album[], onAddToAlbum: (albumId: string) => void }) {
+// Add to Playlist Dialog Component
+function AddToPlaylistDialog({ playlists, onAddToPlaylist }: { playlists: Playlist[], onAddToPlaylist: (playlistId: number) => void }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedAlbum, setSelectedAlbum] = useState<string>('')
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>('')
   
-  const handleAddToAlbum = () => {
-    if (selectedAlbum) {
-      onAddToAlbum(selectedAlbum)
+  const handleAddToPlaylist = () => {
+    if (selectedPlaylist) {
+      onAddToPlaylist(parseInt(selectedPlaylist))
       setIsOpen(false)
-      setSelectedAlbum('')
+      setSelectedPlaylist('')
     }
   }
   
-  // Don't render if albums is not available
-  if (!albums || albums.length === 0) {
+  // Don't render if playlists is not available
+  if (!playlists || playlists.length === 0) {
     return (
-      <Button variant="ghost" size="icon" disabled title="No albums available">
+      <Button variant="ghost" size="icon" disabled title="No playlists available">
         <Plus className="w-4 h-4 text-gray-400" />
       </Button>
     )
@@ -698,21 +806,21 @@ function AddToAlbumDialog({ albums, onAddToAlbum }: { albums: Album[], onAddToAl
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Album</DialogTitle>
+          <DialogTitle>Add to Playlist</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Select value={selectedAlbum} onValueChange={setSelectedAlbum}>
+          <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
             <SelectTrigger>
-              <SelectValue placeholder="Select an album" />
+              <SelectValue placeholder="Select a playlist" />
             </SelectTrigger>
             <SelectContent>
-              {albums?.map((album) => (
-                <SelectItem key={album.id} value={album.id}>
-                  {album.title}
+              {playlists?.map((playlist) => (
+                <SelectItem key={playlist.id} value={playlist.id.toString()}>
+                  {playlist.name}
                 </SelectItem>
               )) || (
                 <SelectItem value="" disabled>
-                  No albums available
+                  No playlists available
                 </SelectItem>
               )}
             </SelectContent>
@@ -726,11 +834,11 @@ function AddToAlbumDialog({ albums, onAddToAlbum }: { albums: Album[], onAddToAl
               Cancel
             </Button>
             <Button 
-              onClick={handleAddToAlbum} 
-              disabled={!selectedAlbum}
+              onClick={handleAddToPlaylist} 
+              disabled={!selectedPlaylist}
               className="flex-1"
             >
-              Add to Album
+              Add to Playlist
             </Button>
           </div>
         </div>

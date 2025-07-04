@@ -17,6 +17,7 @@ import { GlobalCharts } from "@/components/global-charts"
 import { RecommendedArtists } from "./recommended-artists"
 import { UserPlaylists } from "./user-playlists"
 import { CreatePlaylistDialog } from "./ui/create-playlist-dialog"
+import { LikedSongs } from "./liked-songs"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -62,9 +63,12 @@ function SidebarContent() {
             }
           />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {user ? (
-            <UserPlaylists />
+            <>
+              <LikedSongs />
+              <UserPlaylists />
+            </>
           ) : (
             <div className="bg-[#232323] rounded-lg p-4">
               <div className="text-white font-semibold mb-1">Sign in to access features</div>
