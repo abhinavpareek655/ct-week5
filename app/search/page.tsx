@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Filter, Play, Heart, MoreHorizontal } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from "next/image"
+import { useMusicPlayer } from "@/components/music-player"
 
 const searchResults = {
   songs: [
@@ -56,6 +57,7 @@ const searchResults = {
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const { playSong } = useMusicPlayer()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pt-20 pb-24">
@@ -121,6 +123,14 @@ export default function SearchPage() {
                           <Button
                             size="icon"
                             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            onClick={() => playSong({
+                              id: String(song.id),
+                              title: song.title,
+                              artist: song.artist,
+                              audioUrl: `/songs/${song.title}.webm`,
+                              coverUrl: song.cover,
+                              album: song.album
+                            })}
                           >
                             <Play className="w-4 h-4" />
                           </Button>
@@ -168,6 +178,14 @@ export default function SearchPage() {
                           <Button
                             size="icon"
                             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            onClick={() => playSong({
+                              id: String(song.id),
+                              title: song.title,
+                              artist: song.artist,
+                              audioUrl: `/songs/${song.title}.webm`,
+                              coverUrl: song.cover,
+                              album: song.album
+                            })}
                           >
                             <Play className="w-4 h-4" />
                           </Button>

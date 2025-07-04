@@ -57,6 +57,7 @@ interface MusicPlayerContextType {
   toggleFullscreen: () => void
   toggleLike: () => void
   addToAlbum: (albumId: string) => void
+  refreshRecentlyPlayed: () => void
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined)
@@ -74,6 +75,8 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [albums, setAlbums] = useState<Album[]>([])
+  const [albumsLoading, setAlbumsLoading] = useState(true)
+  const [recentlyPlayedRefresh, setRecentlyPlayedRefresh] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
   
@@ -177,13 +180,20 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
+        setAlbumsLoading(true)
         const response = await fetch('/api/albums')
         if (response.ok) {
           const albumsData = await response.json()
-          setAlbums(albumsData)
+          setAlbums(Array.isArray(albumsData) ? albumsData : [])
+        } else {
+          console.error('Failed to fetch albums:', response.statusText)
+          setAlbums([])
         }
       } catch (error) {
         console.error('Error fetching albums:', error)
+        setAlbums([])
+      } finally {
+        setAlbumsLoading(false)
       }
     }
     fetchAlbums()
@@ -215,7 +225,166 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     }
     checkLikedStatus()
   }, [currentSong, user])
+
+  const playSong = useCallback(async (song: Song) => {
+    console.log('🎵 Playing song:', song.title, 'by', song.artist)
+    console.log('📝 Song object:', song)
+    console.log('👤 User object:', user)
+    
+    setCurrentSong(song)
+    setIsPlaying(true)
+    
+    // Record the play if user is logged in
+    if (user?.id) {
+      try {
+        const requestData = {
+          songId: parseInt(song.id),
+          userId: user.id
+        }
+        
+        console.log('📊 Recording play with data:', requestData)
+        console.log('🔗 API endpoint: /api/songs/play')
+        
+        const response = await fetch('/api/songs/play', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
+        })
+        
+        console.log('📮 API response status:', response.status)
+        
+        if (response.ok) {
+          const responseData = await response.json()
+          console.log('✅ Play recorded successfully:', responseData)
+          // Trigger recently played refresh after a short delay
+          setTimeout(() => {
+            setRecentlyPlayedRefresh(prev => prev + 1)
+          }, 500)
+        } else {
+          const errorText = await response.text()
+          console.error('❌ Failed to record play:', response.status, errorText)
+          
+          // Try to parse error as JSON for more details
+          try {
+            const errorJson = JSON.parse(errorText)
+            console.error('📝 Error details:', errorJson)
+          } catch {
+            console.error('📝 Raw error text:', errorText)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error recording play:', error)
+        // Don't fail the play action if recording fails
+      }
+    } else {
+      console.log('👤 User not logged in, skipping play recording')
+    }
+  }, [user?.id])
+
+  const pause = useCallback(() => setIsPlaying(false), [])
+  const resume = useCallback(() => setIsPlaying(true), [])
+  const seekTo = useCallback((time: number) => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.currentTime = time
+      setProgress(time)
+    }
+  }, [])
+  const setVolumeLevel = useCallback((vol: number) => {
+    setVolume(vol)
+    if (vol > 0) setIsMuted(false)
+  }, [])
+  const toggleMute = useCallback(() => setIsMuted(m => !m), [])
+  const skipBack = useCallback(() => seekTo(Math.max(progress - 10, 0)), [progress, seekTo])
+  const skipForward = useCallback(() => seekTo(Math.min(progress + 10, duration)), [progress, duration, seekTo])
   
+  const toggleLoop = useCallback(() => setIsLooping(prev => !prev), [])
+  const toggleShuffle = useCallback(() => setIsShuffling(prev => !prev), [])
+  const toggleFullscreen = useCallback(() => setIsFullscreen(prev => !prev), [])
+  
+  const toggleLike = useCallback(async () => {
+    if (!currentSong || !user) return
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+      
+      const response = await fetch('/api/user/liked-songs', {
+        method: isLiked ? 'DELETE' : 'POST',
+        headers,
+        body: JSON.stringify({ songId: currentSong.id }),
+      })
+      
+      if (response.ok) {
+        setIsLiked(!isLiked)
+        toast({
+          title: isLiked ? 'Removed from liked songs' : 'Added to liked songs',
+          description: `${currentSong.title} by ${currentSong.artist}`,
+        })
+      } else {
+        throw new Error('Failed to update liked status')
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update liked status',
+        variant: 'destructive',
+      })
+    }
+  }, [currentSong, user, isLiked, toast])
+  
+  const addToAlbum = useCallback(async (albumId: string) => {
+    if (!currentSong || !user) return
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+      
+      const response = await fetch('/api/albums/add-song', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          albumId,
+          songId: currentSong.id 
+        }),
+      })
+      
+      if (response.ok) {
+        const album = albums.find(a => a.id === albumId)
+        toast({
+          title: 'Added to album',
+          description: `${currentSong.title} added to ${album?.title || 'album'}`,
+        })
+      } else {
+        throw new Error('Failed to add to album')
+      }
+    } catch (error) {
+      console.error('Error adding to album:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to add song to album',
+        variant: 'destructive',
+      })
+    }
+  }, [currentSong, user, albums, toast])
+  
+  const refreshRecentlyPlayed = useCallback(() => {
+    setRecentlyPlayedRefresh(prev => prev + 1)
+  }, [])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -289,138 +458,16 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [currentSong, isPlaying, user, volume, pause, resume, skipBack, skipForward, toggleLike, toggleLoop, toggleShuffle, toggleFullscreen, toggleMute, setVolumeLevel])
 
-  const playSong = useCallback(async (song: Song) => {
-    setCurrentSong(song)
-    setIsPlaying(true)
-    
-    // Record the play if user is logged in
-    if (user?.id) {
-      try {
-        await fetch('/api/songs/play', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            songId: parseInt(song.id),
-            userId: user.id
-          })
-        })
-      } catch (error) {
-        console.error('Failed to record play:', error)
-        // Don't fail the play action if recording fails
-      }
-    }
-  }, [user?.id])
-
-  const pause = useCallback(() => setIsPlaying(false), [])
-  const resume = useCallback(() => setIsPlaying(true), [])
-  const seekTo = (time: number) => {
-    const audio = audioRef.current
-    if (audio) {
-      audio.currentTime = time
-      setProgress(time)
-    }
-  }
-  const setVolumeLevel = (vol: number) => {
-    setVolume(vol)
-    if (vol > 0) setIsMuted(false)
-  }
-  const toggleMute = () => setIsMuted(m => !m)
-  const skipBack = () => seekTo(Math.max(progress - 10, 0))
-  const skipForward = () => seekTo(Math.min(progress + 10, duration))
-  
-  const toggleLoop = () => setIsLooping(prev => !prev)
-  const toggleShuffle = () => setIsShuffling(prev => !prev)
-  const toggleFullscreen = () => setIsFullscreen(prev => !prev)
-  
-  const toggleLike = async () => {
-    if (!currentSong || !user) return
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`
-      }
-      
-      const response = await fetch('/api/user/liked-songs', {
-        method: isLiked ? 'DELETE' : 'POST',
-        headers,
-        body: JSON.stringify({ songId: currentSong.id }),
-      })
-      
-      if (response.ok) {
-        setIsLiked(!isLiked)
-        toast({
-          title: isLiked ? 'Removed from liked songs' : 'Added to liked songs',
-          description: `${currentSong.title} by ${currentSong.artist}`,
-        })
-      } else {
-        throw new Error('Failed to update liked status')
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to update liked status',
-        variant: 'destructive',
-      })
-    }
-  }
-  
-  const addToAlbum = async (albumId: string) => {
-    if (!currentSong || !user) return
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`
-      }
-      
-      const response = await fetch('/api/albums/add-song', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-          albumId,
-          songId: currentSong.id 
-        }),
-      })
-      
-      if (response.ok) {
-        const album = albums.find(a => a.id === albumId)
-        toast({
-          title: 'Added to album',
-          description: `${currentSong.title} added to ${album?.title || 'album'}`,
-        })
-      } else {
-        throw new Error('Failed to add to album')
-      }
-    } catch (error) {
-      console.error('Error adding to album:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to add song to album',
-        variant: 'destructive',
-      })
-    }
-  }
-
   return (
     <MusicPlayerContext.Provider value={{
       currentSong, isPlaying, duration, progress,
       volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
       playSong, pause, resume, seekTo, setVolumeLevel, toggleMute,
       skipBack, skipForward, toggleLoop, toggleShuffle, toggleFullscreen,
-      toggleLike, addToAlbum
+      toggleLike, addToAlbum, refreshRecentlyPlayed
     }}>
       {children}
-      {currentSong && <MusicPlayerUI albums={albums} />}
+      {currentSong && <MusicPlayerUI albums={albums || []} />}
     </MusicPlayerContext.Provider>
   )
 }
@@ -530,7 +577,7 @@ function MusicPlayerUI({ albums }: { albums: Album[] }) {
                     <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
                   </Button>
                   
-                  <AddToAlbumDialog albums={albums} onAddToAlbum={addToAlbum} />
+                  <AddToAlbumDialog albums={albums || []} onAddToAlbum={addToAlbum} />
                   
                   <Button variant="ghost" size="icon" onClick={toggleMute}>
                     {isMuted || volume === 0 ? 
@@ -572,7 +619,7 @@ function MusicPlayerUI({ albums }: { albums: Album[] }) {
           >
             <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
           </Button>
-          <AddToAlbumDialog albums={albums} onAddToAlbum={addToAlbum} />
+          <AddToAlbumDialog albums={albums || []} onAddToAlbum={addToAlbum} />
         </div>
         {/* Controls */}
         <div className="flex flex-col items-center flex-1 max-w-md mx-8 space-y-2">
@@ -633,6 +680,15 @@ function AddToAlbumDialog({ albums, onAddToAlbum }: { albums: Album[], onAddToAl
     }
   }
   
+  // Don't render if albums is not available
+  if (!albums || albums.length === 0) {
+    return (
+      <Button variant="ghost" size="icon" disabled title="No albums available">
+        <Plus className="w-4 h-4 text-gray-400" />
+      </Button>
+    )
+  }
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -650,11 +706,15 @@ function AddToAlbumDialog({ albums, onAddToAlbum }: { albums: Album[], onAddToAl
               <SelectValue placeholder="Select an album" />
             </SelectTrigger>
             <SelectContent>
-              {albums.map((album) => (
+              {albums?.map((album) => (
                 <SelectItem key={album.id} value={album.id}>
                   {album.title}
                 </SelectItem>
-              ))}
+              )) || (
+                <SelectItem value="" disabled>
+                  No albums available
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           <div className="flex gap-2">

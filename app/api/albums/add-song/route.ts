@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
 export async function POST(request: NextRequest) {
   try {
     const { albumId, songId } = await request.json()
     
-    // Get the user from the authorization header (optional for this action)
+    if (!albumId || !songId) {
+      return NextResponse.json({ error: 'Album ID and Song ID are required' }, { status: 400 })
+    }
+    
+    // Get the user from the authorization header
     const authHeader = request.headers.get('authorization')
     if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -25,19 +30,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Check if the song is already in the album (if using a junction table)
-    // For now, we'll update the song's album_id directly
-    const { error } = await supabase
-      .from('Song')
-      .update({ album_id: parseInt(albumId) })
-      .eq('id', parseInt(songId))
-    
-    if (error) {
-      console.error('Error adding song to album:', error)
-      return NextResponse.json({ error: 'Failed to add song to album' }, { status: 500 })
+    // Get the album name from our predefined albums
+    const albumNames = {
+      '1': 'Favorites',
+      '2': 'Recently Added', 
+      '3': 'My Playlist'
     }
     
-    return NextResponse.json({ success: true })
+    const albumName = albumNames[albumId as keyof typeof albumNames] || 'Favorites'
+    
+    // Update the song's album field
+    const updatedSong = await prisma.song.update({
+      where: { id: parseInt(songId) },
+      data: {
+        album: albumName
+      }
+    })
+    
+    if (!updatedSong) {
+      return NextResponse.json({ error: 'Song not found' }, { status: 404 })
+    }
+    
+    return NextResponse.json({ success: true, album: albumName })
   } catch (error) {
     console.error('Error in POST /api/albums/add-song:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

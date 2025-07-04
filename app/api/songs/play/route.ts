@@ -1,51 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
+
+// Use service role key for server-side operations, fallback to anon key if service role is not available
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export async function POST(request: NextRequest) {
   try {
-    const { songId, userId } = await request.json()
+    console.log('🎵 Play API called')
+    
+    // Check if we have the required environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error('❌ Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('❌ Missing both SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+    
+    const body = await request.json()
+    console.log('📝 Request body:', body)
+    
+    const { songId, userId } = body
     
     if (!songId || !userId) {
+      console.error('❌ Missing required fields:', { songId, userId })
       return NextResponse.json(
         { error: 'Song ID and User ID are required' },
         { status: 400 }
       )
     }
 
+    console.log('📊 Recording play for user:', userId, 'song:', songId)
+
     // Record the play in PlayHistory
-    const { error: playHistoryError } = await supabase
+    const insertData = {
+      userId,
+      songId: parseInt(songId),
+      playedAt: new Date().toISOString()
+    }
+    
+    console.log('📝 Insert data:', insertData)
+    
+    const { data, error: playHistoryError } = await supabase
       .from('PlayHistory')
-      .insert({
-        userId,
-        songId,
-        playedAt: new Date().toISOString()
-      })
+      .insert(insertData)
+      .select()
 
     if (playHistoryError) {
-      console.error('Error recording play history:', playHistoryError)
+      console.error('❌ Supabase error details:', {
+        message: playHistoryError.message,
+        details: playHistoryError.details,
+        hint: playHistoryError.hint,
+        code: playHistoryError.code
+      })
       return NextResponse.json(
-        { error: 'Failed to record play history' },
+        { 
+          error: 'Failed to record play history',
+          details: playHistoryError.message,
+          code: playHistoryError.code
+        },
         { status: 500 }
       )
     }
 
-    // Increment the plays count for the song
-    const { error: updateError } = await supabase
-      .from('Song')
-      .update({ plays: supabase.rpc('increment_plays') })
-      .eq('id', songId)
+    console.log('✅ Play recorded successfully:', data)
 
-    if (updateError) {
-      console.error('Error updating song plays:', updateError)
-      // Don't fail the request if this fails, just log it
-    }
+    // Note: Play count increment is handled by the database trigger
+    // So we don't need to manually update the Song table
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('Error in play recording:', error)
+    console.error('❌ Unexpected error in play recording:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
-} 
+}

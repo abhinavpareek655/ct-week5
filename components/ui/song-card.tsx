@@ -43,7 +43,8 @@ export function SongCard({
   onMore,
   onClick,
 }: SongCardProps) {
-  const handlePlay = () => {
+  const handlePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     onPlay?.(song.id)
   }
 
@@ -76,10 +77,10 @@ export function SongCard({
                 className="rounded-lg object-cover w-full h-full"
               />
               {showPlayButton && (
-                                  <Button
+                  <Button
                     size="icon"
                     className="absolute bottom-0 right-0 bg-green-500 hover:bg-green-400 rounded-full w-6 h-6 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-[4px_4px_8px_rgba(0,0,0,0.5)] z-100"
-                    onClick={handlePlay}
+                    onClick={(e) => handlePlay(e)}
                   >
                     <Play className="w-3 h-3 fill-black text-black" />
                   </Button>
@@ -140,7 +141,7 @@ export function SongCard({
             {showPlayButton && (
               <Button
                 size="icon"
-                onClick={handlePlay}
+                onClick={(e) => handlePlay(e)}
                 className="absolute bottom-2 right-2 bg-green-500 hover:bg-green-400 rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 shadow-lg"
               >
                 <Play className="w-4 h-4 text-white" />
@@ -193,7 +194,7 @@ export function SongCard({
           {showPlayButton && (
             <Button
               size="icon"
-              onClick={handlePlay}
+              onClick={(e) => handlePlay(e)}
               className="absolute bottom-2 right-2 bg-green-500 hover:bg-green-400 rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 shadow-[4px_4px_8px_rgba(0,0,0,0.6)] hover:shadow-[8px_8px_16px_rgba(0,0,0,0.8)] z-50 hover:scale-105 transition-all duration-200"
             >
               <Play className="w-4 h-4 text-black fill-black" />

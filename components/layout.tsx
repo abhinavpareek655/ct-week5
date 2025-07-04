@@ -15,6 +15,8 @@ import { TrendingNow } from "@/components/trending-now"
 import { GlobalArtists } from "@/components/global-artists"
 import { GlobalCharts } from "@/components/global-charts"
 import { RecommendedArtists } from "./recommended-artists"
+import { UserPlaylists } from "./user-playlists"
+import { CreatePlaylistDialog } from "./ui/create-playlist-dialog"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -23,9 +25,9 @@ const navigation = [
   { name: "Top Charts", href: "/library", icon: Hash },
 ]
 
-const playlists = ["Liked Songs", "My Playlist #1", "Chill Vibes", "Workout Mix", "Road Trip"]
-
 function SidebarContent() {
+  const { user } = useAuth()
+  
   return (
     <>
       {/* Navigation */}
@@ -52,21 +54,30 @@ function SidebarContent() {
       <div className="mb-6 mx-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-white font-bold text-lg">Your Library</span>
-          <Button size="icon" variant="ghost" className="text-white">
-            <PlusCircle className="h-5 w-5" />
-            </Button>
+          <CreatePlaylistDialog 
+            trigger={
+              <Button size="icon" variant="ghost" className="text-white">
+                <PlusCircle className="h-5 w-5" />
+              </Button>
+            }
+          />
         </div>
         <div className="space-y-4">
-          <div className="bg-[#232323] rounded-lg p-4">
-            <div className="text-white font-semibold mb-1">Create your first playlist</div>
-            <div className="text-gray-400 text-sm mb-3">It's easy, we'll help you</div>
-            <Button className="bg-white text-black font-bold rounded-full px-4 py-2 w-fit">Create playlist</Button>
-          </div>
-          <div className="bg-[#232323] rounded-lg p-4">
-            <div className="text-white font-semibold mb-1">Let's find some podcasts to follow</div>
-            <div className="text-gray-400 text-sm mb-3">We'll keep you updated on new episodes</div>
-            <Button className="bg-white text-black font-bold rounded-full px-4 py-2 w-fit">Browse podcasts</Button>
-          </div>
+          {user ? (
+            <UserPlaylists />
+          ) : (
+            <div className="bg-[#232323] rounded-lg p-4">
+              <div className="text-white font-semibold mb-1">Sign in to access features</div>
+              <div className="text-gray-400 text-sm mb-3">Like adding playlists, liking songs, and viewing recently played</div>
+              <Button 
+                variant="outline" 
+                className="w-full text-white border-gray-600 hover:bg-white hover:text-black"
+                onClick={() => window.location.href = '/auth/signin'}
+              >
+                Sign In
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -165,7 +176,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Global Music Player: fixed at bottom, always visible when playing */}
       {isPlaying && currentSong && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
-          <MusicPlayer song={currentSong} isPlaying={isPlaying} />
+          <MusicPlayer albums={[]} />
         </div>
       )}
     </>

@@ -144,6 +144,10 @@ export function Discover() {
                                     song={song} 
                                     variant="default"
                                     showMetadata={true}
+                                    onPlay={() => playSong({
+                                        ...song,
+                                        id: String(song.id) // ensure id is string for player
+                                    })}
                                     onClick={() => playSong({
                                         ...song,
                                         id: String(song.id) // ensure id is string for player

@@ -5,53 +5,118 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { useMusicPlayer } from "@/components/music-player"
+import { createClient } from '@supabase/supabase-js'
+import { SongCard, SongCardSkeleton } from "@/components/ui/song-card"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface RecentlyPlayedSong {
-  id: number
+  id: string
   title: string
   artist: string
-  album: string
-  coverUrl: string
+  album?: string
+  coverUrl?: string
   audioUrl: string
-  playedAt: string
+  lastPlayedAt: string
+  plays?: number
 }
 
 export function RecentlyPlayed() {
   const [recentSongs, setRecentSongs] = useState<RecentlyPlayedSong[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
-  const { playSong } = useMusicPlayer()
+  const { playSong, currentSong, refreshRecentlyPlayed } = useMusicPlayer()
 
-  useEffect(() => {
-    async function fetchRecentlyPlayed() {
-      if (!user?.id) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const response = await fetch(`/api/songs/recently-played?userId=${user.id}&limit=10`)
-        if (response.ok) {
-          const data = await response.json()
-          setRecentSongs(data)
-        } else {
-          console.error('Failed to fetch recently played songs')
-        }
-      } catch (error) {
-        console.error('Error fetching recently played:', error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchRecentlyPlayed = async () => {
+    if (!user?.id) {
+      setLoading(false)
+      return
     }
 
+    try {
+      setLoading(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
+      const response = await fetch('/api/user/recently-played', {
+        headers
+      })
+      
+      console.log('Recently played API response status:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Recently played data:', data)
+        setRecentSongs(data.slice(0, 6)) // Show only first 6 for horizontal scroll
+      } else {
+        const errorText = await response.text()
+        console.error('Failed to fetch recently played songs:', response.status, errorText)
+      }
+    } catch (error) {
+      console.error('Error fetching recently played:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchRecentlyPlayed()
   }, [user?.id])
+  
+  // Listen for refresh trigger from music player
+  useEffect(() => {
+    if (user?.id) {
+      // Add a small delay to ensure the play was recorded in the database
+      const timer = setTimeout(() => {
+        console.log('🔄 Refreshing recently played due to new song play')
+        fetchRecentlyPlayed()
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [refreshRecentlyPlayed, user?.id])
 
   const handlePlaySong = (song: RecentlyPlayedSong) => {
     playSong({
-      ...song,
-      id: String(song.id)
+      id: song.id,
+      title: song.title,
+      artist: song.artist,
+      audioUrl: song.audioUrl,
+      coverUrl: song.coverUrl,
+      album: song.album
     })
+  }
+
+  const handlePlaySongById = (songId: number) => {
+    const song = recentSongs.find(s => parseInt(s.id) === songId)
+    if (song) {
+      handlePlaySong(song)
+    }
+  }
+  
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d ago`
+    
+    return date.toLocaleDateString()
   }
 
   if (!user) {
@@ -69,54 +134,27 @@ export function RecentlyPlayed() {
 
       <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
         {loading ? (
-          // Show skeleton loading
+          // Show skeleton loading using SongCardSkeleton
           Array.from({ length: 5 }).map((_, i) => (
-            <Card
-              key={i}
-              className="bg-white/10 backdrop-blur-md border-white/20 flex-shrink-0 w-48"
-            >
-              <CardContent className="p-4">
-                <div className="relative mb-4">
-                  <div className="w-full aspect-square bg-gray-700 rounded-lg animate-pulse" />
-                </div>
-                <div className="h-4 bg-gray-700 rounded mb-2 animate-pulse" />
-                <div className="h-3 bg-gray-700 rounded mb-2 animate-pulse w-3/4" />
-                <div className="h-3 bg-gray-700 rounded animate-pulse w-1/2" />
-              </CardContent>
-            </Card>
+            <SongCardSkeleton key={i} variant="default" />
           ))
         ) : recentSongs.length > 0 ? (
           recentSongs.map((song) => (
-            <Card
+            <SongCard
               key={song.id}
-              className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-300 group flex-shrink-0 w-48 cursor-pointer"
-              onClick={() => handlePlaySong(song)}
-            >
-              <CardContent className="p-4">
-                <div className="relative mb-4">
-                  <Image
-                    src={song.coverUrl || "/placeholder.svg"}
-                    alt={song.title}
-                    width={160}
-                    height={160}
-                    className="w-full aspect-square object-cover rounded-lg shadow-lg"
-                  />
-                  <Button
-                    size="icon"
-                    className="absolute bottom-2 right-2 bg-green-500 hover:bg-green-600 rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 shadow-lg"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handlePlaySong(song)
-                    }}
-                  >
-                    <Play className="w-4 h-4 text-white" />
-                  </Button>
-                </div>
-                <h3 className="font-semibold text-white mb-1 truncate">{song.title}</h3>
-                <p className="text-gray-400 text-sm mb-2 truncate">{song.artist}</p>
-                <p className="text-gray-500 text-xs">{song.playedAt}</p>
-              </CardContent>
-            </Card>
+              song={{
+                id: parseInt(song.id),
+                title: song.title,
+                artist: song.artist,
+                album: song.album,
+                coverUrl: song.coverUrl,
+                duration: formatTimeAgo(song.lastPlayedAt)
+              }}
+              variant="default"
+              showMetadata={true}
+              onPlay={handlePlaySongById}
+              onClick={handlePlaySongById}
+            />
           ))
         ) : (
           <div className="text-gray-400 text-center w-full py-8">
