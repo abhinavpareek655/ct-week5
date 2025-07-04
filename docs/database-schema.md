@@ -10,8 +10,8 @@
 | artist_id   | integer   | YES         | null                               |
 | album_id    | integer   | YES         | null                               |
 | genre       | text      | NO          | null                               |
-| coverUrl    | text      | NO          | null                               |
-| audioUrl    | text      | NO          | null                               |
+| cover_url    | text      | NO          | null                               |
+| audio_url    | text      | NO          | null                               |
 | title       | text      | NO          | null                               |
 | artist      | text      | NO          | null                               |
 | album       | text      | NO          | null                               |

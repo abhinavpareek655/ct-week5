@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
           title,
           artist,
           album,
-          coverUrl,
-          audioUrl,
+          cover_url,
+          audio_url,
           plays
         )
       `)
-      .eq('userId', user.id)
-      .order('playedAt', { ascending: false })
+      .eq('user_id', user.id)
+      .order('played_at', { ascending: false })
       .limit(20)
     
     if (fetchError) {
@@ -61,10 +61,10 @@ export async function GET(request: NextRequest) {
           title: play.Song.title,
           artist: play.Song.artist,
           album: play.Song.album,
-          audioUrl: play.Song.audioUrl,
-          coverUrl: play.Song.coverUrl,
+          audio_url: play.Song.audio_url,
+          cover_url: play.Song.cover_url,
           plays: play.Song.plays,
-          lastPlayedAt: play.playedAt
+          lastplayed_at: play.played_at
         })
       }
     })

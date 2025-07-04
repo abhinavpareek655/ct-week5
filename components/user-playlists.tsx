@@ -104,6 +104,10 @@ export function UserPlaylists() {
 
   return (
     <section>
+      <div className="flex items-center space-x-2 mb-2">
+        <Music className="w-5 h-5 text-blue-500" />
+        <span className="text-white font-semibold text-sm">Your Playlists</span>
+      </div>
       <div className="flex flex-col space-y-4 overflow-y-auto pb-4 scrollbar-hide">
         {loading ? (
           // Show skeleton loading

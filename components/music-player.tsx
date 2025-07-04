@@ -20,8 +20,8 @@ export interface Song {
   id: string
   title: string
   artist: string
-  audioUrl: string
-  coverUrl?: string
+  audio_url: string
+  cover_url?: string
   album?: string
 }
 
@@ -140,7 +140,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     if (!audio || !currentSong) return
     
     audio.pause()
-    audio.src = currentSong.audioUrl
+    audio.src = currentSong.audio_url
     audio.volume = isMuted ? 0 : volume
     
     const handleLoadedMetadata = () => setDuration(audio.duration)
@@ -296,7 +296,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       try {
         const requestData = {
           songId: parseInt(song.id),
-          userId: user.id
+          user_id: user.id
         }
         
         console.log('📊 Recording play with data:', requestData)
@@ -455,7 +455,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         headers,
         body: JSON.stringify({ 
           playlistId,
-          songId: currentSong.id 
+          songId: currentSong.id
         }),
       })
       
@@ -611,7 +611,7 @@ function MusicPlayerUI({ albums, playlists }: { albums: Album[], playlists: Play
             {/* Album Art */}
             <div className="flex-shrink-0">
               <Image 
-                src={song.coverUrl || '/placeholder.svg'} 
+                src={song.cover_url || '/placeholder.svg'} 
                 alt={song.title} 
                 width={400} 
                 height={400} 
@@ -714,7 +714,7 @@ function MusicPlayerUI({ albums, playlists }: { albums: Album[], playlists: Play
       <div className="flex items-center justify-between max-w-6xl mx-auto">
         {/* Song Info */}
         <div className="flex items-center space-x-4 flex-1 min-w-0">
-          <Image src={song.coverUrl||'/placeholder.svg'} alt={song.title} width={60} height={60} className="rounded-lg" />
+          <Image src={song.cover_url||'/placeholder.svg'} alt={song.title} width={60} height={60} className="rounded-lg" />
           <div className="min-w-0">
             <h4 className="text-white truncate">{song.title}</h4>
             <p className="text-gray-400 text-sm truncate">{song.artist}</p>

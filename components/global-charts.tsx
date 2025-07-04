@@ -12,7 +12,7 @@ interface ChartData {
     id: number
     title: string
     artist: string
-    coverUrl: string
+    cover_url: string
     position: number
   }>
 }
@@ -41,7 +41,7 @@ export function GlobalCharts() {
             id,
             title,
             artist,
-            "coverUrl"
+            "cover_url"
           )
         `)
         .order("position", { ascending: true })
@@ -67,7 +67,7 @@ export function GlobalCharts() {
             id: chartEntry.Song.id,
             title: chartEntry.Song.title,
             artist: chartEntry.Song.artist,
-            coverUrl: chartEntry.Song.coverUrl,
+            cover_url: chartEntry.Song.cover_url,
             position: chartEntry.position
           })
         })

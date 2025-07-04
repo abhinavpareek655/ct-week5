@@ -14,8 +14,8 @@ type Song = {
   artist: string
   album: string
   genre: string
-  coverUrl: string
-  audioUrl: string
+  cover_url: string
+  audio_url: string
   plays: number
 }
 

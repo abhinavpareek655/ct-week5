@@ -17,8 +17,8 @@ interface LikedSong {
   title: string
   artist: string
   album?: string
-  coverUrl?: string
-  audioUrl: string
+  cover_url?: string
+  audio_url: string
   plays?: number
 }
 
@@ -72,8 +72,8 @@ export function LikedSongs() {
       id: song.id,
       title: song.title,
       artist: song.artist,
-      audioUrl: song.audioUrl,
-      coverUrl: song.coverUrl,
+      audio_url: song.audio_url,
+      cover_url: song.cover_url,
       album: song.album
     })
   }
@@ -111,7 +111,7 @@ export function LikedSongs() {
                 title: song.title,
                 artist: song.artist,
                 album: song.album,
-                coverUrl: song.coverUrl
+                cover_url: song.cover_url
               }}
               variant="compact"
               showActions={false}

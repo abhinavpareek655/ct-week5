@@ -18,7 +18,7 @@ export function TestLikeFeature() {
   const { toast } = useToast()
 
   // Test song ID (you can change this to any song ID that exists in your database)
-  const testSongId = "1"
+  const song_id = "1"
 
   const checkLikedStatus = async () => {
     if (!user) return
@@ -32,7 +32,7 @@ export function TestLikeFeature() {
         headers['Authorization'] = `Bearer ${session.access_token}`
       }
       
-      const response = await fetch(`/api/user/liked-songs/${testSongId}`, {
+      const response = await fetch(`/api/user/liked-songs/${song_id}`, {
         headers
       })
       
@@ -69,14 +69,14 @@ export function TestLikeFeature() {
       const response = await fetch('/api/user/liked-songs', {
         method: isLiked ? 'DELETE' : 'POST',
         headers,
-        body: JSON.stringify({ songId: testSongId }),
+        body: JSON.stringify({ song_id: song_id, user_id: user.id }),
       })
       
       if (response.ok) {
         setIsLiked(!isLiked)
         toast({
           title: isLiked ? 'Removed from liked songs' : 'Added to liked songs',
-          description: `Song ${testSongId}`,
+          description: `Song ${song_id}`,
         })
       } else {
         const errorData = await response.json()
@@ -101,7 +101,7 @@ export function TestLikeFeature() {
         <div>
           <p className="text-sm text-gray-400">Current Status: {isLiked ? 'Liked' : 'Not Liked'}</p>
           <p className="text-sm text-gray-400">User: {user ? user.email : 'Not logged in'}</p>
-          <p className="text-sm text-gray-400">Song ID: {testSongId}</p>
+          <p className="text-sm text-gray-400">Song ID: {song_id}</p>
         </div>
         
         <div className="flex gap-2">

@@ -31,23 +31,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('📝 Request body:', body)
     
-    const { songId, userId } = body
+    const { songId, user_id } = body
     
-    if (!songId || !userId) {
-      console.error('❌ Missing required fields:', { songId, userId })
+    if (!songId || !user_id) {
+      console.error('❌ Missing required fields:', { songId, user_id })
       return NextResponse.json(
         { error: 'Song ID and User ID are required' },
         { status: 400 }
       )
     }
 
-    console.log('📊 Recording play for user:', userId, 'song:', songId)
+    console.log('📊 Recording play for user:', user_id, 'song:', songId)
 
     // Record the play in PlayHistory
     const insertData = {
-      userId,
+      user_id,
       songId: parseInt(songId),
-      playedAt: new Date().toISOString()
+      played_at: new Date().toISOString()
     }
     
     console.log('📝 Insert data:', insertData)

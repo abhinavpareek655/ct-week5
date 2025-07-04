@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -39,15 +38,15 @@ export async function POST(request: NextRequest) {
     
     const albumName = albumNames[albumId as keyof typeof albumNames] || 'Favorites'
     
-    // Update the song's album field
-    const updatedSong = await prisma.song.update({
-      where: { id: parseInt(songId) },
-      data: {
-        album: albumName
-      }
-    })
+    // Update the song's album field using Supabase
+    const { data: updatedSong, error: updateError } = await supabase
+      .from('Song')
+      .update({ album: albumName })
+      .eq('id', parseInt(songId))
+      .select()
+      .single()
     
-    if (!updatedSong) {
+    if (updateError || !updatedSong) {
       return NextResponse.json({ error: 'Song not found' }, { status: 404 })
     }
     

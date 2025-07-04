@@ -18,9 +18,9 @@ interface RecentlyPlayedSong {
   title: string
   artist: string
   album?: string
-  coverUrl?: string
-  audioUrl: string
-  lastPlayedAt: string
+  cover_url?: string
+  audio_url: string
+  lastplayed_at: string
   plays?: number
 }
 
@@ -89,8 +89,8 @@ export function RecentlyPlayed() {
       id: song.id,
       title: song.title,
       artist: song.artist,
-      audioUrl: song.audioUrl,
-      coverUrl: song.coverUrl,
+      audio_url: song.audio_url,
+      cover_url: song.cover_url,
       album: song.album
     })
   }
@@ -147,8 +147,8 @@ export function RecentlyPlayed() {
                 title: song.title,
                 artist: song.artist,
                 album: song.album,
-                coverUrl: song.coverUrl,
-                duration: formatTimeAgo(song.lastPlayedAt)
+                cover_url: song.cover_url,
+                duration: formatTimeAgo(song.lastplayed_at)
               }}
               variant="default"
               showMetadata={true}

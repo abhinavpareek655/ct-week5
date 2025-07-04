@@ -13,7 +13,7 @@ interface ChartCardProps {
       id: number
       title: string
       artist: string
-      coverUrl: string
+      cover_url: string
       position: number
     }>
   }
@@ -79,7 +79,7 @@ export function ChartCard({ chart, className = "", onPlay }: ChartCardProps) {
           <div key={song.id} className="flex items-center space-x-3 group/song hover:bg-white/5 rounded-lg p-2 transition-colors">
             <span className="text-gray-400 font-mono text-sm w-4 text-center">{song.position}</span>
             <Image
-              src={song.coverUrl || "/placeholder.svg"}
+              src={song.cover_url || "/placeholder.svg"}
               alt={song.title}
               width={40}
               height={40}

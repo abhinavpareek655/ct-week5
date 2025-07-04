@@ -127,8 +127,8 @@ export default function SearchPage() {
                               id: String(song.id),
                               title: song.title,
                               artist: song.artist,
-                              audioUrl: `/songs/${song.title}.webm`,
-                              coverUrl: song.cover,
+                              audio_url: `/songs/${song.title}.webm`,
+                              cover_url: song.cover,
                               album: song.album
                             })}
                           >
@@ -182,8 +182,8 @@ export default function SearchPage() {
                               id: String(song.id),
                               title: song.title,
                               artist: song.artist,
-                              audioUrl: `/songs/${song.title}.webm`,
-                              coverUrl: song.cover,
+                              audio_url: `/songs/${song.title}.webm`,
+                              cover_url: song.cover,
                               album: song.album
                             })}
                           >

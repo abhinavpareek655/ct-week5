@@ -63,12 +63,12 @@ function SidebarContent() {
             }
           />
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto scrollbar-hide">
           {user ? (
-            <>
+            <div className="space-y-6 overflow-y-auto scrollbar-hide max-h-[340px] w-full">
               <LikedSongs />
               <UserPlaylists />
-            </>
+            </div>
           ) : (
             <div className="bg-[#232323] rounded-lg p-4">
               <div className="text-white font-semibold mb-1">Sign in to access features</div>
@@ -180,7 +180,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Global Music Player: fixed at bottom, always visible when playing */}
       {isPlaying && currentSong && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
-          <MusicPlayer albums={[]} />
+          <MusicPlayer albums={[]} playlists={[]} />
         </div>
       )}
     </>

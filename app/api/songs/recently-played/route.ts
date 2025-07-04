@@ -4,10 +4,10 @@ import { supabase } from '@/lib/supabaseClient'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const user_id = searchParams.get('user_id')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    if (!userId) {
+    if (!user_id) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
@@ -18,18 +18,18 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from('PlayHistory')
       .select(`
-        playedAt,
+        played_at,
         Song (
           id,
           title,
           artist,
           album,
-          coverUrl,
-          audioUrl
+          cover_url,
+          audio_url
         )
       `)
-      .eq('userId', userId)
-      .order('playedAt', { ascending: false })
+      .eq('user_id', user_id)
+      .order('played_at', { ascending: false })
       .limit(limit)
 
     if (error) {
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
       title: item.Song.title,
       artist: item.Song.artist,
       album: item.Song.album,
-      coverUrl: item.Song.coverUrl,
-      audioUrl: item.Song.audioUrl,
-      playedAt: formatTimeAgo(new Date(item.playedAt))
+      cover_url: item.Song.cover_url,
+      audio_url: item.Song.audio_url,
+      played_at: formatTimeAgo(new Date(item.played_at))
     })) || []
 
     return NextResponse.json(recentlyPlayed)

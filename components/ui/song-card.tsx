@@ -13,9 +13,9 @@ interface SongCardProps {
     artist: string
     album?: string
     genre?: string
-    coverUrl?: string
+    cover_url?: string
     duration?: string
-    playedAt?: string
+    played_at?: string
     trend?: string
     rank?: number
     lyrics?: string
@@ -70,7 +70,7 @@ export function SongCard({
           <div className="flex items-center space-x-4">
             <div className="relative w-16 h-16 flex-shrink-0">
               <Image
-                src={song.coverUrl || "/placeholder.svg"}
+                src={song.cover_url || "/placeholder.svg"}
                 alt={song.title}
                 width={64}
                 height={64}
@@ -132,7 +132,7 @@ export function SongCard({
         <CardContent className="p-4">
           <div className="relative mb-4">
             <Image
-              src={song.coverUrl || "/placeholder.svg"}
+              src={song.cover_url || "/placeholder.svg"}
               alt={song.title}
               width={160}
               height={160}
@@ -168,8 +168,8 @@ export function SongCard({
           {showMetadata && song.genre && (
             <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-xs">{song.genre}</Badge>
           )}
-          {song.playedAt && (
-            <p className="text-gray-500 text-xs mt-2">{song.playedAt}</p>
+          {song.played_at && (
+            <p className="text-gray-500 text-xs mt-2">{song.played_at}</p>
           )}
         </CardContent>
       </Card>
@@ -185,7 +185,7 @@ export function SongCard({
       <CardContent className="p-4">
         <div className="relative mb-4">
           <Image
-            src={song.coverUrl || "/placeholder.svg"}
+            src={song.cover_url || "/placeholder.svg"}
             alt={song.title}
             width={160}
             height={160}
@@ -210,8 +210,8 @@ export function SongCard({
             {showMetadata && song.genre && (
             <Badge className="bg-white text-black font-bold">{genres.find(genre => genre.value === song.genre)?.title}</Badge>
             )}
-            {song.playedAt && (
-            <p className="text-gray-500 text-xs">{song.playedAt}</p>
+            {song.played_at && (
+            <p className="text-gray-500 text-xs">{song.played_at}</p>
             )}
         </div>
       </CardContent>
@@ -227,14 +227,14 @@ interface SongCardSkeletonProps {
 export function SongCardSkeleton({ variant = "default", className = "" }: SongCardSkeletonProps) {
   if (variant === "compact") {
     return (
-      <Card className={`bg-white/10 backdrop-blur-md border-white/20 ${className}`}>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <Skeleton className="w-15 h-15 rounded-lg" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
+      <Card className={`bg-white/10 backdrop-blur-md border-white/20 max-w-full w-full ${className}`}>
+        <CardContent className="p-4 w-full max-w-full">
+          <div className="flex items-center space-x-4 w-full max-w-full">
+            <Skeleton className="w-15 h-15 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2 min-w-0">
+              <Skeleton className="h-4 w-3/4 max-w-full" />
+              <Skeleton className="h-3 w-1/2 max-w-full" />
+              <Skeleton className="h-3 w-1/3 max-w-full" />
             </div>
           </div>
         </CardContent>

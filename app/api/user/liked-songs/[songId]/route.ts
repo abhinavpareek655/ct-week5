@@ -8,10 +8,10 @@ const supabase = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { songId: string } }
+  context: { params: { songId: string } }
 ) {
   try {
-    const songId = params.songId
+    const { songId } = await context.params
     
     // Get the user from the authorization header
     const authHeader = request.headers.get('authorization')
