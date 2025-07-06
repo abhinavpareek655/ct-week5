@@ -29,7 +29,7 @@ export async function GET() {
       const transformedAlbums = albums.map(album => ({
         id: album.id.toString(),
         title: album.title,
-        artist: album.Artist?.name || 'Unknown Artist',
+        artist: (album.Artist as any)?.name || 'Unknown Artist',
         cover_url: album.cover_url,
         genre: album.genre,
         release_date: album.release_date,
@@ -72,7 +72,7 @@ export async function GET() {
       ).values()
     )
 
-    const albums = uniqueAlbums.map((song, index) => ({
+    const fallbackAlbums = uniqueAlbums.map((song, index) => ({
       id: (index + 1).toString(),
       title: song.album || 'Unknown Album',
       artist: song.artist || 'Unknown Artist',
@@ -83,8 +83,8 @@ export async function GET() {
     }))
 
     // Get song counts for each album
-    const albumsWithCounts = await Promise.all(
-      albums.map(async (album) => {
+    const fallbackAlbumsWithCounts = await Promise.all(
+      fallbackAlbums.map(async (album) => {
         const { count } = await supabase
           .from('Song')
           .select('*', { count: 'exact', head: true })
@@ -97,7 +97,7 @@ export async function GET() {
       })
     )
 
-    return NextResponse.json(albumsWithCounts)
+    return NextResponse.json(fallbackAlbumsWithCounts)
   } catch (error) {
     console.error('Error in GET /api/albums:', error)
     // Return empty array as fallback

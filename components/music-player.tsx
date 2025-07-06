@@ -9,45 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/components/auth-provider"
 import { createClient } from '@supabase/supabase-js'
+import { Song, Album, Playlist } from "@/lib/types"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-// Song type
-export interface Song {
-  id: string
-  title: string
-  artist: string
-  audio_url: string
-  cover_url?: string
-  album?: string
-}
-
-
-
-// Playlist type
-export interface Playlist {
-  id: number
-  name: string
-  description?: string
-  cover_url?: string
-  is_public: boolean
-  created_at: string
-  song_count?: number
-}
-
-// Album type
-export interface Album {
-  id: string
-  title: string
-  artist: string
-  cover_url?: string
-  genre?: string
-  release_date?: string
-  song_count?: number
-}
 
 interface MusicPlayerContextType {
   currentSong: Song | null

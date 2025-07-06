@@ -5,17 +5,10 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Album } from "@/lib/types"
 
 interface AlbumCardProps {
-  album: {
-    id: string
-    title: string
-    artist: string
-    cover_url?: string
-    genre?: string
-    release_date?: string
-    song_count?: number
-  }
+  album: Album
   variant?: "default" | "compact"
   showActions?: boolean
   className?: string

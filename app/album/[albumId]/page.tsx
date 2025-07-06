@@ -8,31 +8,12 @@ import { useMusicPlayer } from "@/components/music-player"
 import { createClient } from '@supabase/supabase-js'
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
+import { Album, Song } from "@/lib/types"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-interface Song {
-  id: string
-  title: string
-  artist: string
-  album?: string
-  cover_url?: string
-  audio_url: string
-}
-
-interface Album {
-  id: string
-  title: string
-  artist: string
-  cover_url?: string
-  genre?: string
-  release_date?: string
-  song_count?: number
-  songs?: Song[]
-}
 
 export default function AlbumDetailPage() {
   const params = useParams()

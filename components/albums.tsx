@@ -4,16 +4,7 @@ import { AlbumCard, AlbumCardSkeleton } from "@/components/ui/album-card"
 import { Music, Disc } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useMusicPlayer } from "@/components/music-player"
-
-interface Album {
-  id: string
-  title: string
-  artist: string
-  cover_url?: string
-  genre?: string
-  release_date?: string
-  song_count?: number
-}
+import { Album } from "@/lib/types"
 
 export function Albums() {
   const [albums, setAlbums] = useState<Album[]>([])
