@@ -37,7 +37,7 @@ export async function GET() {
     // Test 3: Check PlayHistory table
     const { data: playHistory, error: playError } = await supabase
       .from('PlayHistory')
-      .select('id, user_id, songId')
+      .select('id, user_id, song_id')
       .limit(5)
     
     results.playHistory = {

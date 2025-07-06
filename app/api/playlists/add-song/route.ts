@@ -8,9 +8,9 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { playlistId, songId } = await request.json()
+    const { playlist_id, song_id } = await request.json()
     
-    if (!playlistId || !songId) {
+    if (!playlist_id || !song_id) {
       return NextResponse.json({ error: 'Playlist ID and Song ID are required' }, { status: 400 })
     }
     
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const { data: playlist, error: playlistError } = await supabase
       .from('Playlist')
       .select('id, name')
-      .eq('id', playlistId)
+      .eq('id', playlist_id)
       .eq('user_id', user.id)
       .single()
     
@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
     const { data: existingSong, error: checkError } = await supabase
       .from('PlaylistSong')
       .select('id')
-      .eq('playlist_id', playlistId)
-      .eq('song_id', parseInt(songId))
+      .eq('playlist_id', playlist_id)
+      .eq('song_id', parseInt(song_id))
       .single()
     
     if (existingSong) {
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
     const { data: playlistSong, error: insertError } = await supabase
       .from('PlaylistSong')
       .insert({
-        playlist_id: playlistId,
-        song_id: parseInt(songId),
+        playlist_id: playlist_id,
+        song_id: parseInt(song_id),
         added_at: new Date().toISOString()
       })
       .select()

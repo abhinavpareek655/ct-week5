@@ -87,17 +87,17 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🧪 Testing PlayHistory insert...')
     
-    const { user_id, songId } = await request.json()
+    const { user_id, song_id } = await request.json()
     
-    if (!user_id || !songId) {
+    if (!user_id || !song_id) {
       return NextResponse.json({
-        error: 'Missing user_id or songId for test'
+        error: 'Missing user_id or song_id for test'
       }, { status: 400 })
     }
     
     const testData = {
       user_id,
-      songId: parseInt(songId),
+      song_id: parseInt(song_id),
       played_at: new Date().toISOString()
     }
     

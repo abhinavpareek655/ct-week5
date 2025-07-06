@@ -78,8 +78,8 @@ export function LikedSongs() {
     })
   }
 
-  const handlePlaySongById = (songId: number) => {
-    const song = likedSongs.find(s => parseInt(s.id) === songId)
+  const handlePlaySongById = (song_id: number) => {
+    const song = likedSongs.find(s => parseInt(s.id) === song_id)
     if (song) {
       handlePlaySong(song)
     }
@@ -103,7 +103,7 @@ export function LikedSongs() {
             <SongCardSkeleton key={i} variant="compact" />
           ))
         ) : likedSongs.length > 0 ? (
-          likedSongs.map((song) => (
+          likedSongs.slice(0, 2).map((song) => (
             <SongCard
               key={song.id}
               song={{

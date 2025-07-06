@@ -1,7 +1,7 @@
 import yt_dlp
 import os
 
-def download_audio(youtube_url, output_path="songs/%(title)s.%(ext)s"):
+def download_audio(youtube_url, output_path="public/songs/%(title)s.%(ext)s"):
     # Create songs directory if it doesn't exist
     os.makedirs("songs", exist_ok=True)
     

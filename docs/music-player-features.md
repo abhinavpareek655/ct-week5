@@ -56,7 +56,7 @@
 ## API Endpoints
 
 ### Liked Songs
-- `GET /api/user/liked-songs/[songId]` - Check if song is liked
+- `GET /api/user/liked-songs/[song_id]` - Check if song is liked
 - `POST /api/user/liked-songs` - Add song to liked songs
 - `DELETE /api/user/liked-songs` - Remove song from liked songs
 

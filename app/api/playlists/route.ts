@@ -36,7 +36,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch playlists' }, { status: 500 })
     }
     
-    return NextResponse.json(playlists || [])
+    // Get song counts for each playlist
+    const playlistsWithCounts = await Promise.all(
+      (playlists || []).map(async (playlist) => {
+        const { count } = await supabase
+          .from('PlaylistSong')
+          .select('*', { count: 'exact', head: true })
+          .eq('playlist_id', playlist.id)
+        
+        return {
+          ...playlist,
+          song_count: count || 0
+        }
+      })
+    )
+    
+    return NextResponse.json(playlistsWithCounts)
   } catch (error) {
     console.error('Error fetching playlists:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

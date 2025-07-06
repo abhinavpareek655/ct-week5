@@ -53,19 +53,9 @@ function SidebarContent() {
         </nav>
       {/* Library Section */}
       <div className="mb-6 mx-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-white font-bold text-lg">Your Library</span>
-          <CreatePlaylistDialog 
-            trigger={
-              <Button size="icon" variant="ghost" className="text-white">
-                <PlusCircle className="h-5 w-5" />
-              </Button>
-            }
-          />
-        </div>
         <div className="space-y-6 overflow-y-auto scrollbar-hide">
           {user ? (
-            <div className="space-y-6 overflow-y-auto scrollbar-hide max-h-[340px] w-full">
+            <div className="space-y-6 overflow-y-auto scrollbar-hide max-h-[380px] w-full">
               <LikedSongs />
               <UserPlaylists />
             </div>
@@ -180,7 +170,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Global Music Player: fixed at bottom, always visible when playing */}
       {isPlaying && currentSong && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
-          <MusicPlayer albums={[]} playlists={[]} />
+          <MusicPlayer playlists={[]} />
         </div>
       )}
     </>

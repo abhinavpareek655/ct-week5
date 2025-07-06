@@ -25,10 +25,10 @@ interface SongCardProps {
   showActions?: boolean
   showMetadata?: boolean
   className?: string
-  onPlay?: (songId: number) => void
-  onLike?: (songId: number) => void
-  onMore?: (songId: number) => void
-  onClick?: (songId: number) => void
+  onPlay?: (song_id: number) => void
+  onLike?: (song_id: number) => void
+  onMore?: (song_id: number) => void
+  onClick?: (song_id: number) => void
 }
 
 export function SongCard({

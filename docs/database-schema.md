@@ -20,7 +20,7 @@
 | column_name | data_type | is_nullable | column_default                      |
 | ----------- | --------- | ----------- | ----------------------------------- |
 | id          | integer   | NO          | nextval('"Lyric_id_seq"'::regclass) |
-| songId      | integer   | NO          | null                                |
+| song_id      | integer   | NO          | null                                |
 | synced      | boolean   | YES         | false                               |
 | timestamps  | jsonb     | YES         | null                                |
 | content     | text      | NO          | null                                |
@@ -125,7 +125,7 @@ A comprehensive view that joins Song, Artist, Album, and Lyric tables to provide
 - **Song.artist_id** → Artist.id
 - **Song.album_id** → Album.id
 - **Album.artist_id** → Artist.id
-- **Lyric.songId** → Song.id
+- **Lyric.song_id** → Song.id
 - **Playlist.user_id** → User.id
 - **UserLikedSongs.user_id** → User.id
 - **UserLikedSongs.song_id** → Song.id

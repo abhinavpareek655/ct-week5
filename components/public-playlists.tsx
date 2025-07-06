@@ -29,6 +29,7 @@ export function PublicPlaylists() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Public playlists data:', data)
         setPlaylists(data)
       } else {
         const errorText = await response.text()
@@ -51,22 +52,14 @@ export function PublicPlaylists() {
     fetchPublicPlaylists()
   }, [])
 
-  const handlePlayPlaylist = (playlistId: number) => {
-    // TODO: Implement playlist playback
-    console.log('Play public playlist:', playlistId)
-    toast({
-      title: "Coming Soon",
-      description: "Playlist playback will be available soon!",
-    })
+  const handlePlayPlaylist = (playlist_id: number) => {
+    // Navigate to playlist detail page to play the playlist
+    window.location.href = `/playlist/${playlist_id}`
   }
 
-  const handlePlaylistClick = (playlistId: number) => {
-    // TODO: Navigate to playlist detail page
-    console.log('View public playlist:', playlistId)
-    toast({
-      title: "Coming Soon",
-      description: "Playlist details will be available soon!",
-    })
+  const handlePlaylistClick = (playlist_id: number) => {
+    // Navigate to playlist detail page
+    window.location.href = `/playlist/${playlist_id}`
   }
 
   return (

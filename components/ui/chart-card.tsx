@@ -18,7 +18,7 @@ interface ChartCardProps {
     }>
   }
   className?: string
-  onPlay?: (songId: number) => void
+  onPlay?: (song_id: number) => void
 }
 
 export function ChartCard({ chart, className = "", onPlay }: ChartCardProps) {

@@ -8,9 +8,9 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { albumId, songId } = await request.json()
+    const { albumId, song_id } = await request.json()
     
-    if (!albumId || !songId) {
+    if (!albumId || !song_id) {
       return NextResponse.json({ error: 'Album ID and Song ID are required' }, { status: 400 })
     }
     
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { data: updatedSong, error: updateError } = await supabase
       .from('Song')
       .update({ album: albumName })
-      .eq('id', parseInt(songId))
+      .eq('id', parseInt(song_id))
       .select()
       .single()
     

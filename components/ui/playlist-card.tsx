@@ -1,9 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Play, MoreHorizontal, Music } from "lucide-react"
+import { Play, MoreHorizontal, Music, Trash2, Plus } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth-provider"
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface PlaylistCardProps {
   playlist: {
@@ -18,9 +27,10 @@ interface PlaylistCardProps {
   variant?: "default" | "compact"
   showActions?: boolean
   className?: string
-  onPlay?: (playlistId: number) => void
-  onMore?: (playlistId: number) => void
-  onClick?: (playlistId: number) => void
+  onPlay?: (playlist_id: number) => void
+  onMore?: (playlist_id: number) => void
+  onClick?: (playlist_id: number) => void
+  onPlaylistDeleted?: () => void
 }
 
 export function PlaylistCard({
@@ -31,18 +41,71 @@ export function PlaylistCard({
   onPlay,
   onMore,
   onClick,
+  onPlaylistDeleted,
 }: PlaylistCardProps) {
+  const { toast } = useToast()
+  const { user } = useAuth()
+
   const handlePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     onPlay?.(playlist.id)
   }
 
-  const handleMore = () => {
+  const handleMore = (e: React.MouseEvent) => {
+    e.stopPropagation()
     onMore?.(playlist.id)
   }
 
   const handleCardClick = () => {
     onClick?.(playlist.id)
+  }
+
+  const handleDeletePlaylist = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to delete playlists",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
+      const response = await fetch(`/api/playlists/${playlist.id}`, {
+        method: 'DELETE',
+        headers
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Playlist "${playlist.name}" deleted successfully`,
+        })
+        onPlaylistDeleted?.()
+      } else {
+        throw new Error('Failed to delete playlist')
+      }
+    } catch (error) {
+      console.error('Error deleting playlist:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete playlist",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddSongToPlaylist = () => {
+    // Navigate to playlist detail page where songs can be added
+    window.location.href = `/playlist/${playlist.id}`
   }
 
   const formatDate = (dateString: string) => {
@@ -78,7 +141,7 @@ export function PlaylistCard({
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-white text-sm truncate">{playlist.name}</h3>
               <p className="text-gray-400 text-xs truncate">
-                {playlist.song_count || 0} songs
+                {playlist.song_count || 0} song{(playlist.song_count || 0) !== 1 ? 's' : ''}
               </p>
               {playlist.description && (
                 <p className="text-gray-500 text-xs truncate">{playlist.description}</p>
@@ -90,14 +153,34 @@ export function PlaylistCard({
                 <Badge className="bg-green-500/20 text-green-400 text-xs">Public</Badge>
               )}
               {showActions && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8"
-                  onClick={handleMore}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8"
+                      onClick={handleMore}
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#181818] border-white/20">
+                    <DropdownMenuItem 
+                      onClick={handleAddSongToPlaylist}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Song
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={handleDeletePlaylist}
+                      className="text-red-400 hover:bg-red-500/20 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Playlist
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
@@ -133,11 +216,41 @@ export function PlaylistCard({
               Public
             </div>
           )}
+          {showActions && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8"
+                  onClick={handleMore}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-[#181818] border-white/20">
+                <DropdownMenuItem 
+                  onClick={handleAddSongToPlaylist}
+                  className="text-white hover:bg-white/10 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Song
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleDeletePlaylist}
+                  className="text-red-400 hover:bg-red-500/20 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Playlist
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         <div>
           <h3 className="font-semibold text-white mb-1 truncate">{playlist.name}</h3>
           <p className="text-gray-400 text-sm mb-2 truncate">
-            {playlist.song_count || 0} songs
+            {playlist.song_count || 0} song{(playlist.song_count || 0) !== 1 ? 's' : ''}
           </p>
           {playlist.description && (
             <p className="text-gray-500 text-xs mb-1 truncate">{playlist.description}</p>

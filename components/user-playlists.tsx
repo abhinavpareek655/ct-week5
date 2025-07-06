@@ -1,11 +1,13 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { PlaylistCard, PlaylistCardSkeleton } from "@/components/ui/playlist-card"
 import { CreatePlaylistDialog } from "@/components/ui/create-playlist-dialog"
-import { Plus, Music } from "lucide-react"
+import { Plus, Music, PlusCircle } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { createClient } from '@supabase/supabase-js'
 import { useToast } from "@/hooks/use-toast"
+import { useMusicPlayer } from "@/components/music-player"
+import { Button } from "./ui/button"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,8 +29,9 @@ export function UserPlaylists() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const { toast } = useToast()
+  const { playPlaylist } = useMusicPlayer()
 
-  const fetchPlaylists = async () => {
+  const fetchPlaylists = useCallback(async () => {
     if (!user?.id) {
       setLoading(false)
       return
@@ -70,33 +73,32 @@ export function UserPlaylists() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id])
 
   useEffect(() => {
     fetchPlaylists()
-  }, [user?.id])
+  }, [fetchPlaylists])
 
-  const handlePlaylistCreated = () => {
+  const handlePlaylistCreated = useCallback(() => {
     fetchPlaylists()
+  }, [fetchPlaylists])
+
+  const handlePlayPlaylist = (playlist_id: number) => {
+    const playlist = playlists.find(p => p.id === playlist_id)
+    if (playlist) {
+      playPlaylist(playlist)
+    }
   }
 
-  const handlePlayPlaylist = (playlistId: number) => {
-    // TODO: Implement playlist playback
-    console.log('Play playlist:', playlistId)
-    toast({
-      title: "Coming Soon",
-      description: "Playlist playback will be available soon!",
-    })
+  const handlePlaylistClick = (playlist_id: number) => {
+    // Navigate to playlist detail page
+    window.location.href = `/playlist/${playlist_id}`
   }
 
-  const handlePlaylistClick = (playlistId: number) => {
-    // TODO: Navigate to playlist detail page
-    console.log('View playlist:', playlistId)
-    toast({
-      title: "Coming Soon",
-      description: "Playlist details will be available soon!",
-    })
-  }
+  const handlePlaylistDeleted = useCallback(() => {
+    // Refresh playlists after deletion
+    fetchPlaylists()
+  }, [fetchPlaylists])
 
   if (!user) {
     return null // Don't show playlists for non-authenticated users
@@ -104,10 +106,19 @@ export function UserPlaylists() {
 
   return (
     <section>
+      <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2 mb-2">
         <Music className="w-5 h-5 text-blue-500" />
         <span className="text-white font-semibold text-sm">Your Playlists</span>
       </div>
+      <CreatePlaylistDialog 
+            trigger={
+              <Button size="icon" variant="ghost" className="text-white">
+                <PlusCircle className="h-5 w-5" />
+              </Button>
+            }
+          />
+          </div>
       <div className="flex flex-col space-y-4 overflow-y-auto pb-4 scrollbar-hide">
         {loading ? (
           // Show skeleton loading
@@ -123,6 +134,7 @@ export function UserPlaylists() {
               showActions={true}
               onPlay={handlePlayPlaylist}
               onClick={handlePlaylistClick}
+              onPlaylistDeleted={handlePlaylistDeleted}
             />
           ))
         ) : (

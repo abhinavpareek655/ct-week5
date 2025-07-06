@@ -1,29 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+function getSupabaseWithAuth(accessToken: string | undefined) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    accessToken
+      ? { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
+      : undefined
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/user/liked-songs')
+    const authHeader = request.headers.get('authorization')
+    const accessToken = authHeader?.replace('Bearer ', '')
+    const supabase = getSupabaseWithAuth(accessToken)
 
     const body = await request.json()
-    console.log('📝 Request body:', body)
-
     const { song_id, user_id } = body
 
     if (!song_id || !user_id) {
-      console.error('❌ Missing required fields:', { song_id, user_id })
       return NextResponse.json(
         { error: 'Song ID and User ID are required' },
         { status: 400 }
       )
     }
-
-    console.log('📊 Recording play for user:', user_id, 'song:', song_id)
 
     const insertData = {
       user_id,
@@ -31,22 +33,14 @@ export async function POST(request: NextRequest) {
       liked_at: new Date().toISOString()
     }
 
-    console.log('📝 Insert data:', insertData)
-    
     const { data, error: likedSongsError } = await supabase
       .from('UserLikedSongs')
       .insert(insertData)
       .select()
-    
+
     if (likedSongsError) {
-      console.error('❌ Supabase error details:', {
-        message: likedSongsError.message,
-        details: likedSongsError.details,
-        hint: likedSongsError.hint,
-        code: likedSongsError.code
-      })
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to add liked song',
           details: likedSongsError.message,
           code: likedSongsError.code
@@ -55,68 +49,59 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Liked song added successfully:', data)
-
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in POST /api/user/liked-songs:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { songId } = await request.json()
-    
-    // Get the user from the authorization header
     const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    const accessToken = authHeader?.replace('Bearer ', '')
+    const supabase = getSupabaseWithAuth(accessToken)
+    const { song_id, user_id } = await request.json()
+
+    if (!accessToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
     // Get user from Supabase auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken)
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
     // Remove song from liked songs
     const { error } = await supabase
       .from('UserLikedSongs')
       .delete()
       .eq('user_id', user.id)
-      .eq('song_id', parseInt(songId))
-    
+      .eq('song_id', parseInt(song_id))
+
     if (error) {
-      console.error('Error removing liked song:', error)
       return NextResponse.json({ error: 'Failed to remove liked song' }, { status: 500 })
     }
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in DELETE /api/user/liked-songs:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the user from the authorization header
     const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json([], { status: 200 }) // Return empty array if not logged in
+    const accessToken = authHeader?.replace('Bearer ', '')
+    const supabase = getSupabaseWithAuth(accessToken)
+    if (!accessToken) {
+      return NextResponse.json([], { status: 200 })
     }
 
     // Get user from Supabase auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken)
     if (authError || !user) {
-      return NextResponse.json([], { status: 200 }) // Return empty array if not logged in
+      return NextResponse.json([], { status: 200 })
     }
 
     // Fetch liked songs for the user, join with Song table for details
@@ -127,7 +112,6 @@ export async function GET(request: NextRequest) {
       .order('liked_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching liked songs:', error)
       return NextResponse.json([], { status: 200 })
     }
 
@@ -148,7 +132,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(likedSongs)
   } catch (error) {
-    console.error('Error in GET /api/user/liked-songs:', error)
     return NextResponse.json([], { status: 200 })
   }
 }

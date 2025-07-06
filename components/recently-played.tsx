@@ -95,8 +95,8 @@ export function RecentlyPlayed() {
     })
   }
 
-  const handlePlaySongById = (songId: number) => {
-    const song = recentSongs.find(s => parseInt(s.id) === songId)
+  const handlePlaySongById = (song_id: number) => {
+    const song = recentSongs.find(s => parseInt(s.id) === song_id)
     if (song) {
       handlePlaySong(song)
     }

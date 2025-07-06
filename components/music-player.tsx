@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle, Heart, Maximize2, Plus, Minimize2, ListMusic } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle, Heart, Maximize2, Plus, Minimize2 } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -25,13 +25,7 @@ export interface Song {
   album?: string
 }
 
-// Album type
-export interface Album {
-  id: string
-  title: string
-  artist_id: string
-  cover_url?: string
-}
+
 
 // Playlist type
 export interface Playlist {
@@ -57,7 +51,13 @@ interface MusicPlayerContextType {
   isLiked: boolean
   playlists: Playlist[]
   playlistsLoading: boolean
+  currentPlaylist: Playlist | null
+  playlistSongs: Song[]
+  currentSongIndex: number
   playSong: (song: Song) => void
+  playPlaylist: (playlist: Playlist) => void
+  playNextSong: () => void
+  playPreviousSong: () => void
   pause: () => void
   resume: () => void
   seekTo: (time: number) => void
@@ -69,8 +69,7 @@ interface MusicPlayerContextType {
   toggleShuffle: () => void
   toggleFullscreen: () => void
   toggleLike: () => void
-  addToAlbum: (albumId: string) => void
-  addToPlaylist: (playlistId: number) => void
+  addToPlaylist: (playlist_id: number) => void
   refreshRecentlyPlayed: () => void
   refreshPlaylists: () => void
 }
@@ -89,11 +88,12 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
   const [isShuffling, setIsShuffling] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
-  const [albums, setAlbums] = useState<Album[]>([])
-  const [albumsLoading, setAlbumsLoading] = useState(true)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [playlistsLoading, setPlaylistsLoading] = useState(true)
   const [recentlyPlayedRefresh, setRecentlyPlayedRefresh] = useState(0)
+  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null)
+  const [playlistSongs, setPlaylistSongs] = useState<Song[]>([])
+  const [currentSongIndex, setCurrentSongIndex] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
   
@@ -146,7 +146,27 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     const handleLoadedMetadata = () => setDuration(audio.duration)
     const handleTimeUpdate = () => setProgress(audio.currentTime)
     const handleEnded = () => {
-      if (isLooping) {
+      if (currentPlaylist && playlistSongs.length > 0) {
+        // Handle playlist playback
+        let nextIndex = currentSongIndex + 1
+        
+        if (nextIndex >= playlistSongs.length) {
+          if (isLooping) {
+            nextIndex = 0
+          } else {
+            // End of playlist
+            setIsPlaying(false)
+            setCurrentSong(null)
+            setCurrentPlaylist(null)
+            setPlaylistSongs([])
+            setCurrentSongIndex(0)
+            return
+          }
+        }
+        
+        setCurrentSongIndex(nextIndex)
+        playSong(playlistSongs[nextIndex])
+      } else if (isLooping) {
         // Loop the current song
         audio.currentTime = 0
         audio.play()
@@ -170,7 +190,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
     }
-  }, [currentSong, isMuted, volume, isLooping])
+  }, [currentSong, isMuted, volume, isLooping, currentPlaylist, playlistSongs, currentSongIndex])
 
   // Sync play/pause with isPlaying
   useEffect(() => {
@@ -193,28 +213,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     playAudio()
   }, [isPlaying, currentSong])
 
-  // Fetch albums on mount
-  useEffect(() => {
-    const fetchAlbums = async () => {
-      try {
-        setAlbumsLoading(true)
-        const response = await fetch('/api/albums')
-        if (response.ok) {
-          const albumsData = await response.json()
-          setAlbums(Array.isArray(albumsData) ? albumsData : [])
-        } else {
-          console.error('Failed to fetch albums:', response.statusText)
-          setAlbums([])
-        }
-      } catch (error) {
-        console.error('Error fetching albums:', error)
-        setAlbums([])
-      } finally {
-        setAlbumsLoading(false)
-      }
-    }
-    fetchAlbums()
-  }, [])
+
 
   // Fetch playlists on mount and when user changes
   useEffect(() => {
@@ -295,7 +294,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     if (user?.id) {
       try {
         const requestData = {
-          songId: parseInt(song.id),
+          song_id: song.id,
           user_id: user.id
         }
         
@@ -340,6 +339,101 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     }
   }, [user?.id])
 
+  const playPlaylist = useCallback(async (playlist: Playlist) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
+      const response = await fetch(`/api/playlists/${playlist.id}`, {
+        headers
+      })
+      
+      if (response.ok) {
+        const playlistData = await response.json()
+        const songs = playlistData.songs || []
+        
+        if (songs.length === 0) {
+          toast({
+            title: "Empty Playlist",
+            description: "This playlist has no songs to play",
+            variant: "destructive",
+          })
+          return
+        }
+
+        setCurrentPlaylist(playlist)
+        
+        // Shuffle songs if shuffle is enabled
+        const shuffledSongs = isShuffling ? [...songs].sort(() => Math.random() - 0.5) : songs
+        setPlaylistSongs(shuffledSongs)
+        setCurrentSongIndex(0)
+        
+        // Start playing the first song
+        await playSong(shuffledSongs[0])
+        
+        toast({
+          title: "Playing Playlist",
+          description: `Now playing ${playlist.name}`,
+        })
+      } else {
+        throw new Error('Failed to load playlist')
+      }
+    } catch (error) {
+      console.error('Error playing playlist:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load playlist',
+        variant: 'destructive',
+      })
+    }
+  }, [playSong, toast, isShuffling])
+
+  const playNextSong = useCallback(() => {
+    if (playlistSongs.length === 0) return
+    
+    let nextIndex = currentSongIndex + 1
+    
+    if (nextIndex >= playlistSongs.length) {
+      if (isLooping) {
+        nextIndex = 0
+      } else {
+        // End of playlist
+        setIsPlaying(false)
+        setCurrentSong(null)
+        setCurrentPlaylist(null)
+        setPlaylistSongs([])
+        setCurrentSongIndex(0)
+        return
+      }
+    }
+    
+    setCurrentSongIndex(nextIndex)
+    playSong(playlistSongs[nextIndex])
+  }, [playlistSongs, currentSongIndex, isLooping, playSong])
+
+  const playPreviousSong = useCallback(() => {
+    if (playlistSongs.length === 0) return
+    
+    let prevIndex = currentSongIndex - 1
+    
+    if (prevIndex < 0) {
+      if (isLooping) {
+        prevIndex = playlistSongs.length - 1
+      } else {
+        // Beginning of playlist
+        return
+      }
+    }
+    
+    setCurrentSongIndex(prevIndex)
+    playSong(playlistSongs[prevIndex])
+  }, [playlistSongs, currentSongIndex, isLooping, playSong])
+
   const pause = useCallback(() => setIsPlaying(false), [])
   const resume = useCallback(() => setIsPlaying(true), [])
   const seekTo = useCallback((time: number) => {
@@ -354,8 +448,20 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     if (vol > 0) setIsMuted(false)
   }, [])
   const toggleMute = useCallback(() => setIsMuted(m => !m), [])
-  const skipBack = useCallback(() => seekTo(Math.max(progress - 10, 0)), [progress, seekTo])
-  const skipForward = useCallback(() => seekTo(Math.min(progress + 10, duration)), [progress, duration, seekTo])
+  const skipBack = useCallback(() => {
+    if (currentPlaylist && playlistSongs.length > 0) {
+      playPreviousSong()
+    } else {
+      seekTo(Math.max(progress - 10, 0))
+    }
+  }, [currentPlaylist, playlistSongs.length, playPreviousSong, progress, seekTo])
+  const skipForward = useCallback(() => {
+    if (currentPlaylist && playlistSongs.length > 0) {
+      playNextSong()
+    } else {
+      seekTo(Math.min(progress + 10, duration))
+    }
+  }, [currentPlaylist, playlistSongs.length, playNextSong, progress, duration, seekTo])
   
   const toggleLoop = useCallback(() => setIsLooping(prev => !prev), [])
   const toggleShuffle = useCallback(() => setIsShuffling(prev => !prev), [])
@@ -373,10 +479,11 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         headers['Authorization'] = `Bearer ${session.access_token}`
       }
       
+      const body = JSON.stringify({ song_id: currentSong.id, user_id: user.id })
       const response = await fetch('/api/user/liked-songs', {
         method: isLiked ? 'DELETE' : 'POST',
         headers,
-        body: JSON.stringify({ songId: currentSong.id }),
+        body,
       })
       
       if (response.ok) {
@@ -398,47 +505,9 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     }
   }, [currentSong, user, isLiked, toast])
   
-  const addToAlbum = useCallback(async (albumId: string) => {
-    if (!currentSong || !user) return
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`
-      }
-      
-      const response = await fetch('/api/albums/add-song', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-          albumId,
-          songId: currentSong.id 
-        }),
-      })
-      
-      if (response.ok) {
-        const album = albums.find(a => a.id === albumId)
-        toast({
-          title: 'Added to album',
-          description: `${currentSong.title} added to ${album?.title || 'album'}`,
-        })
-      } else {
-        throw new Error('Failed to add to album')
-      }
-    } catch (error) {
-      console.error('Error adding to album:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to add song to album',
-        variant: 'destructive',
-      })
-    }
-  }, [currentSong, user, albums, toast])
+
   
-  const addToPlaylist = useCallback(async (playlistId: number) => {
+  const addToPlaylist = useCallback(async (playlist_id: number) => {
     if (!currentSong || !user) return
     
     try {
@@ -454,17 +523,16 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         method: 'POST',
         headers,
         body: JSON.stringify({ 
-          playlistId,
-          songId: currentSong.id
+          playlist_id,
+          song_id: currentSong.id
         }),
       })
       
       if (response.ok) {
         const result = await response.json()
-        const playlist = playlists.find(p => p.id === playlistId)
         toast({
           title: 'Added to playlist',
-          description: `${currentSong.title} added to ${playlist?.name || 'playlist'}`,
+          description: `${currentSong.title} added to playlist`,
         })
       } else {
         const errorData = await response.json()
@@ -478,7 +546,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         variant: 'destructive',
       })
     }
-  }, [currentSong, user, playlists, toast])
+  }, [currentSong, user, toast])
   
   const refreshRecentlyPlayed = useCallback(() => {
     setRecentlyPlayedRefresh(prev => prev + 1)
@@ -567,12 +635,14 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       currentSong, isPlaying, duration, progress,
       volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
       playlists, playlistsLoading,
-      playSong, pause, resume, seekTo, setVolumeLevel, toggleMute,
+      currentPlaylist, playlistSongs, currentSongIndex,
+      playSong, playPlaylist, playNextSong, playPreviousSong,
+      pause, resume, seekTo, setVolumeLevel, toggleMute,
       skipBack, skipForward, toggleLoop, toggleShuffle, toggleFullscreen,
-      toggleLike, addToAlbum, addToPlaylist, refreshRecentlyPlayed, refreshPlaylists
+      toggleLike, addToPlaylist, refreshRecentlyPlayed, refreshPlaylists
     }}>
       {children}
-      {currentSong && <MusicPlayerUI albums={albums || []} playlists={playlists || []} />}
+      {currentSong && <MusicPlayerUI playlists={playlists || []} />}
     </MusicPlayerContext.Provider>
   )
 }
@@ -584,12 +654,13 @@ export function useMusicPlayer() {
 }
 
 // UI Component
-function MusicPlayerUI({ albums, playlists }: { albums: Album[], playlists: Playlist[] }) {
+function MusicPlayerUI({ playlists }: { playlists: Playlist[] }) {
   const {
     currentSong: song, isPlaying, duration, progress,
     volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
+    currentPlaylist, playlistSongs, currentSongIndex,
     pause, resume, seekTo, setVolumeLevel, toggleMute, skipBack, skipForward,
-    toggleLoop, toggleShuffle, toggleFullscreen, toggleLike, addToAlbum, addToPlaylist
+    toggleLoop, toggleShuffle, toggleFullscreen, toggleLike, addToPlaylist
   } = useMusicPlayer()
   const formatTime = (sec: number) => `${Math.floor(sec/60)}:${Math.floor(sec%60).toString().padStart(2,'0')}`
   
@@ -775,51 +846,51 @@ function MusicPlayerUI({ albums, playlists }: { albums: Album[], playlists: Play
   )
 }
 
+
+
 // Add to Playlist Dialog Component
-function AddToPlaylistDialog({ playlists, onAddToPlaylist }: { playlists: Playlist[], onAddToPlaylist: (playlistId: number) => void }) {
+const AddToPlaylistDialog = React.memo(({ playlists, onAddToPlaylist }: { playlists: Playlist[], onAddToPlaylist: (playlist_id: number) => void }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>('')
   
-  const handleAddToPlaylist = () => {
+  const handleAddToPlaylist = useCallback(() => {
     if (selectedPlaylist) {
       onAddToPlaylist(parseInt(selectedPlaylist))
       setIsOpen(false)
       setSelectedPlaylist('')
     }
-  }
-  
-  // Don't render if playlists is not available
-  if (!playlists || playlists.length === 0) {
-    return (
-      <Button variant="ghost" size="icon" disabled title="No playlists available">
-        <Plus className="w-4 h-4 text-gray-400" />
-      </Button>
-    )
-  }
+  }, [selectedPlaylist, onAddToPlaylist])
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          disabled={!playlists || playlists.length === 0}
+          title={!playlists || playlists.length === 0 ? "No playlists available" : "Add to playlist"}
+        >
           <Plus className="w-4 h-4 text-gray-400" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-[#181818] border-white/20">
         <DialogHeader>
-          <DialogTitle>Add to Playlist</DialogTitle>
+          <DialogTitle className="text-white">Add to Playlist</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <Select value={selectedPlaylist} onValueChange={setSelectedPlaylist}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-white/10 border-white/20 text-white">
               <SelectValue placeholder="Select a playlist" />
             </SelectTrigger>
-            <SelectContent>
-              {playlists?.map((playlist) => (
-                <SelectItem key={playlist.id} value={playlist.id.toString()}>
-                  {playlist.name}
-                </SelectItem>
-              )) || (
-                <SelectItem value="" disabled>
+            <SelectContent className="bg-[#181818] border-white/20">
+              {playlists && playlists.length > 0 ? (
+                playlists.map((playlist) => (
+                  <SelectItem key={playlist.id} value={playlist.id.toString()} className="text-white hover:bg-white/10">
+                    {playlist.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled className="text-gray-400">
                   No playlists available
                 </SelectItem>
               )}
@@ -829,14 +900,14 @@ function AddToPlaylistDialog({ playlists, onAddToPlaylist }: { playlists: Playli
             <Button 
               variant="outline" 
               onClick={() => setIsOpen(false)}
-              className="flex-1"
+              className="flex-1 border-white/20 text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleAddToPlaylist} 
               disabled={!selectedPlaylist}
-              className="flex-1"
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white"
             >
               Add to Playlist
             </Button>
@@ -845,6 +916,6 @@ function AddToPlaylistDialog({ playlists, onAddToPlaylist }: { playlists: Playli
       </DialogContent>
     </Dialog>
   )
-}
+})
 
 export { MusicPlayerUI as MusicPlayer }

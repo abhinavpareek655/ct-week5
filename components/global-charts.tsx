@@ -119,8 +119,8 @@ export function GlobalCharts() {
     }
   }
 
-  const handlePlay = (songId: number) => {
-    console.log('Play song:', songId)
+  const handlePlay = (song_id: number) => {
+    console.log('Play song:', song_id)
     // Add your play logic here
   }
 
