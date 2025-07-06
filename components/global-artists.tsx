@@ -3,6 +3,7 @@ import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRef, useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
+import { useMusicPlayer } from "@/components/music-player"
 
 export function GlobalArtists() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -10,6 +11,7 @@ export function GlobalArtists() {
   const [canScrollRight, setCanScrollRight] = useState(false)
   const [artists, setArtists] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { playSong } = useMusicPlayer()
 
   const checkScrollButtons = () => {
     if (scrollContainerRef.current) {
@@ -28,6 +30,32 @@ export function GlobalArtists() {
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' })
+    }
+  }
+
+  const handlePlayArtist = async (artistId: number) => {
+    try {
+      // Fetch the artist's most popular song
+      const { data: songs, error } = await supabase
+        .from('Song')
+        .select('*')
+        .eq('artist', artists.find((a: any) => a.id === artistId)?.name)
+        .order('plays', { ascending: false })
+        .limit(1)
+
+      if (!error && songs && songs.length > 0) {
+        const song = songs[0]
+        playSong({
+          id: song.id.toString(),
+          title: song.title,
+          artist: song.artist,
+          audio_url: song.audio_url,
+          cover_url: song.cover_url,
+          album: song.album
+        })
+      }
+    } catch (error) {
+      console.error('Error playing artist:', error)
     }
   }
 
@@ -105,7 +133,8 @@ export function GlobalArtists() {
                   name: artist.name,
                   image: artist.image_url || "/placeholder-user.jpg",
                   subtitle: artist.country
-                }} 
+                }}
+                onPlay={handlePlayArtist}
               />
             ))
           )}

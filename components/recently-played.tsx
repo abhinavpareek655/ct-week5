@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Play, Clock } from "lucide-react"
+import { Play, Clock, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { useMusicPlayer } from "@/components/music-player"
 import { createClient } from '@supabase/supabase-js'
@@ -29,6 +29,29 @@ export function RecentlyPlayed() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const { playSong, currentSong, refreshRecentlyPlayed } = useMusicPlayer()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const checkScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setCanScrollLeft(scrollLeft > 0)
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1)
+    }
+  }
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' })
+    }
+  }
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' })
+    }
+  }
 
   const fetchRecentlyPlayed = async () => {
     if (!user?.id) {
@@ -84,6 +107,15 @@ export function RecentlyPlayed() {
     }
   }, [refreshRecentlyPlayed, user?.id])
 
+  useEffect(() => {
+    checkScrollButtons()
+    const container = scrollContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', checkScrollButtons)
+      return () => container.removeEventListener('scroll', checkScrollButtons)
+    }
+  }, [recentSongs])
+
   const handlePlaySong = (song: RecentlyPlayedSong) => {
     playSong({
       id: song.id,
@@ -124,7 +156,7 @@ export function RecentlyPlayed() {
   }
 
   return (
-    <section>
+    <section className="relative">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           <Clock className="w-6 h-6 text-green-500" />
@@ -132,35 +164,62 @@ export function RecentlyPlayed() {
         </div>
       </div>
 
-      <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-        {loading ? (
-          // Show skeleton loading using SongCardSkeleton
-          Array.from({ length: 5 }).map((_, i) => (
-            <SongCardSkeleton key={i} variant="default" />
-          ))
-        ) : recentSongs.length > 0 ? (
-          recentSongs.map((song) => (
-            <SongCard
-              key={song.id}
-              song={{
-                id: parseInt(song.id),
-                title: song.title,
-                artist: song.artist,
-                album: song.album,
-                cover_url: song.cover_url,
-                duration: formatTimeAgo(song.lastplayed_at)
-              }}
-              variant="default"
-              showMetadata={true}
-              onPlay={handlePlaySongById}
-              onClick={handlePlaySongById}
-            />
-          ))
-        ) : (
-          <div className="text-gray-400 text-center w-full py-8">
-            No recently played songs yet. Start listening to some music!
-          </div>
+      <div className="relative group">
+        {/* Left scroll button */}
+        {canScrollLeft && (
+          <Button
+            onClick={scrollLeft}
+            size="icon"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
         )}
+
+        {/* Right scroll button */}
+        {canScrollRight && (
+          <Button
+            onClick={scrollRight}
+            size="icon"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        )}
+
+        <div 
+          ref={scrollContainerRef}
+          className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide px-2"
+        >
+          {loading ? (
+            // Show skeleton loading using SongCardSkeleton
+            Array.from({ length: 5 }).map((_, i) => (
+              <SongCardSkeleton key={i} variant="default" />
+            ))
+          ) : recentSongs.length > 0 ? (
+            recentSongs.map((song) => (
+              <SongCard
+                key={song.id}
+                song={{
+                  id: parseInt(song.id),
+                  title: song.title,
+                  artist: song.artist,
+                  album: song.album,
+                  cover_url: song.cover_url,
+                  duration: formatTimeAgo(song.lastplayed_at)
+                }}
+                variant="default"
+                showMetadata={true}
+                onPlay={handlePlaySongById}
+                onClick={handlePlaySongById}
+              />
+            ))
+          ) : (
+            <div className="text-gray-400 text-center w-full py-8">
+              No recently played songs yet. Start listening to some music!
+            </div>
+          )}
+        </div>
       </div>
     </section>
   )

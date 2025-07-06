@@ -2,6 +2,7 @@ import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "./button"
 import { Play } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface ArtistCardProps {
   artist: {
@@ -16,14 +17,24 @@ interface ArtistCardProps {
 }
 
 export function ArtistCard({ artist, className = "", showPlayButton = true, onPlay }: ArtistCardProps) {
+  const router = useRouter()
+  
   const handlePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     if (onPlay) {
       onPlay(artist.id)
     }
   }
+
+  const handleClick = () => {
+    router.push(`/artist/${artist.id}`)
+  }
+
   return (
-    <div className={`bg-[#181818] hover:bg-gradient-to-b hover:from-[#181818] hover:to-white/10 transition-all duration-300 group flex-shrink-0 w-36 flex flex-col items-center p-4 cursor-pointer border-none rounded-lg ${className}`}>
+    <div 
+      className={`bg-[#181818] hover:bg-gradient-to-b hover:from-[#181818] hover:to-white/10 transition-all duration-300 group flex-shrink-0 w-36 flex flex-col items-center p-4 cursor-pointer border-none rounded-lg ${className}`}
+      onClick={handleClick}
+    >
       <div className="w-24 h-24 mb-3 relative">
         <Image
           src={artist.image || "/placeholder-user.jpg"}

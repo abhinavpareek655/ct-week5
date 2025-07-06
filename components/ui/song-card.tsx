@@ -5,6 +5,16 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { genres } from "@/assets/constants"
+import { AddToPlaylistDialog } from "./add-to-playlist-dialog"
+import { useAuth } from "@/components/auth-provider"
+import { useToast } from "@/hooks/use-toast"
+import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from "react"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface SongCardProps {
   song: {
@@ -43,16 +53,125 @@ export function SongCard({
   onMore,
   onClick,
 }: SongCardProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [isLiked, setIsLiked] = useState(false)
+  const [likingInProgress, setLikingInProgress] = useState(false)
+
+  // Check if song is already liked
+  useEffect(() => {
+    const checkIfLiked = async () => {
+      if (!user?.id) return
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return
+
+        const response = await fetch('/api/user/liked-songs', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        })
+
+        if (response.ok) {
+          const likedSongs = await response.json()
+          setIsLiked(likedSongs.some((likedSong: any) => parseInt(likedSong.id) === song.id))
+        }
+      } catch (error) {
+        console.error('Error checking liked status:', error)
+      }
+    }
+
+    checkIfLiked()
+  }, [user?.id, song.id])
+
   const handlePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     onPlay?.(song.id)
   }
 
-  const handleLike = () => {
+  const handleLike = async (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    
+    if (!user?.id) {
+      toast({
+        title: "Login Required",
+        description: "Please login to like songs",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (likingInProgress) return
+
+    try {
+      setLikingInProgress(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+
+      if (isLiked) {
+        // Unlike the song
+        const response = await fetch('/api/user/liked-songs', {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({
+            song_id: song.id,
+            user_id: user.id
+          })
+        })
+
+        if (response.ok) {
+          setIsLiked(false)
+          toast({
+            title: "Removed from liked songs",
+            description: `"${song.title}" has been removed from your liked songs`,
+          })
+        } else {
+          throw new Error('Failed to unlike song')
+        }
+      } else {
+        // Like the song
+        const response = await fetch('/api/user/liked-songs', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            song_id: song.id,
+            user_id: user.id
+          })
+        })
+
+        if (response.ok) {
+          setIsLiked(true)
+          toast({
+            title: "Added to liked songs",
+            description: `"${song.title}" has been added to your liked songs`,
+          })
+        } else {
+          throw new Error('Failed to like song')
+        }
+      }
+    } catch (error) {
+      console.error('Error handling like:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update liked status",
+        variant: "destructive",
+      })
+    } finally {
+      setLikingInProgress(false)
+    }
+
+    // Call the original onLike callback if provided
     onLike?.(song.id)
   }
 
-  const handleMore = () => {
+  const handleMore = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     onMore?.(song.id)
   }
 
@@ -96,26 +215,33 @@ export function SongCard({
             </div>
             
             <div className="flex items-center space-x-2">
-              {showActions && (
-                <>
+              {/* Like Button */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className={`opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 ${
+                  isLiked ? 'text-red-500 hover:text-red-400' : 'text-gray-400 hover:text-white'
+                }`}
+                onClick={handleLike}
+                disabled={likingInProgress}
+              >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+              </Button>
+              
+              {/* Add to Playlist Button */}
+              <AddToPlaylistDialog
+                trigger={
                   <Button
                     size="icon"
                     variant="ghost"
                     className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8"
-                    onClick={handleLike}
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8"
-                    onClick={handleMore}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
-                </>
-              )}
+                }
+                songId={song.id}
+                songTitle={song.title}
+              />
             </div>
           </div>
         </CardContent>

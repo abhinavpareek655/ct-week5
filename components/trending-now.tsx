@@ -55,8 +55,8 @@ export function TrendingNow() {
                   ...song,
                   id: String(song.id)
                 })}
-                onLike={(song_id) => console.log('Like song:', song_id)}
-                onMore={(song_id) => console.log('More options for song:', song_id)}
+                onLike={(song_id) => {/* Like functionality is handled internally by SongCard */}}
+                onMore={(song_id) => {/* More options (add to playlist) is handled internally by SongCard */}}
                 onClick={() => playSong({
                   ...song,
                   id: String(song.id)
