@@ -63,13 +63,13 @@ export function GlobalArtists() {
         </div>
       </div>
       
-      <div className="relative group">
+      <div className="relative">
         {/* Left scroll button */}
         {canScrollLeft && (
           <Button
             onClick={scrollLeft}
             size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 transition-opacity z-10 shadow-lg song-scroll-button"
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
@@ -80,7 +80,7 @@ export function GlobalArtists() {
           <Button
             onClick={scrollRight}
             size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 bg-black/80 hover:bg-black text-white rounded-full w-10 h-10 opacity-0 transition-opacity z-10 shadow-lg song-scroll-button"
           >
             <ChevronRight className="w-5 h-5" />
           </Button>
@@ -88,7 +88,7 @@ export function GlobalArtists() {
 
         <div 
           ref={scrollContainerRef}
-          className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 px-2"
+          className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 px-2 song-container"
         >
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (

@@ -16,7 +16,6 @@ export default function HomePage() {
           <Discover />
           <Albums />
           <PublicPlaylists />
-          
         </div>
         <div className="lg:hidden space-y-12">
           <TrendingNow />
