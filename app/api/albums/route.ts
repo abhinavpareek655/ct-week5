@@ -9,7 +9,7 @@ const supabase = createClient(
 export async function GET() {
   try {
     // First try to fetch from the Album table
-    const { data: albums, error: albumError } = await supabase
+    const { data: albumData, error: albumError } = await supabase
       .from('Album')
       .select(`
         id,
@@ -24,9 +24,9 @@ export async function GET() {
       `)
       .order('title')
 
-    if (!albumError && albums && albums.length > 0) {
+    if (!albumError && albumData && albumData.length > 0) {
       // Transform the data to include artist name
-      const transformedAlbums = albums.map(album => ({
+      const transformedAlbums = albumData.map(album => ({
         id: album.id.toString(),
         title: album.title,
         artist: (album.Artist as any)?.name || 'Unknown Artist',
