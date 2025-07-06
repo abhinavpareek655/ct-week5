@@ -5,6 +5,7 @@ import { RecentlyPlayed } from "@/components/recently-played"
 import { Discover } from "@/components/discover"
 import { GlobalArtists } from "@/components/global-artists"
 import { PublicPlaylists } from "@/components/public-playlists"
+import { Albums } from "@/components/albums"
 
 export default function HomePage() {
   return (
@@ -13,6 +14,7 @@ export default function HomePage() {
         <div className="space-y-12">
           <RecentlyPlayed />
           <Discover />
+          <Albums />
           <PublicPlaylists />
           
         </div>

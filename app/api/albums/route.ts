@@ -8,11 +8,58 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // Fetch unique albums from Song table using Supabase
+    // First try to fetch from the Album table
+    const { data: albums, error: albumError } = await supabase
+      .from('Album')
+      .select(`
+        id,
+        title,
+        cover_url,
+        genre,
+        release_date,
+        Artist (
+          id,
+          name
+        )
+      `)
+      .order('title')
+
+    if (!albumError && albums && albums.length > 0) {
+      // Transform the data to include artist name
+      const transformedAlbums = albums.map(album => ({
+        id: album.id.toString(),
+        title: album.title,
+        artist: album.Artist?.name || 'Unknown Artist',
+        cover_url: album.cover_url,
+        genre: album.genre,
+        release_date: album.release_date,
+        song_count: 0 // We'll calculate this separately
+      }))
+
+      // Get song counts for each album
+      const albumsWithCounts = await Promise.all(
+        transformedAlbums.map(async (album) => {
+          const { count } = await supabase
+            .from('Song')
+            .select('*', { count: 'exact', head: true })
+            .eq('album_id', parseInt(album.id))
+          
+          return {
+            ...album,
+            song_count: count || 0
+          }
+        })
+      )
+
+      return NextResponse.json(albumsWithCounts)
+    }
+
+    // Fallback: Fetch unique albums from Song table
     const { data: songsWithAlbums, error } = await supabase
       .from('Song')
-      .select('album, artist')
+      .select('album, artist, cover_url')
       .not('album', 'is', null)
+      .not('album', 'eq', '')
 
     if (error) {
       throw error
@@ -28,59 +75,32 @@ export async function GET() {
     const albums = uniqueAlbums.map((song, index) => ({
       id: (index + 1).toString(),
       title: song.album || 'Unknown Album',
-      artist_id: '1', // placeholder
-      cover_url: null
+      artist: song.artist || 'Unknown Artist',
+      cover_url: song.cover_url,
+      genre: null,
+      release_date: null,
+      song_count: 0 // We'll calculate this separately
     }))
 
-    // Add some default albums if none exist
-    if (albums.length === 0) {
-      const defaultAlbums = [
-        {
-          id: '1',
-          title: 'Favorites',
-          artist_id: '1',
-          cover_url: null
-        },
-        {
-          id: '2', 
-          title: 'Recently Added',
-          artist_id: '1',
-          cover_url: null
-        },
-        {
-          id: '3',
-          title: 'My Playlist',
-          artist_id: '1', 
-          cover_url: null
+    // Get song counts for each album
+    const albumsWithCounts = await Promise.all(
+      albums.map(async (album) => {
+        const { count } = await supabase
+          .from('Song')
+          .select('*', { count: 'exact', head: true })
+          .eq('album', album.title)
+        
+        return {
+          ...album,
+          song_count: count || 0
         }
-      ]
-      return NextResponse.json(defaultAlbums)
-    }
+      })
+    )
 
-    return NextResponse.json(albums)
+    return NextResponse.json(albumsWithCounts)
   } catch (error) {
     console.error('Error in GET /api/albums:', error)
-    // Return default albums as fallback
-    const fallbackAlbums = [
-      {
-        id: '1',
-        title: 'Favorites',
-        artist_id: '1',
-        cover_url: null
-      },
-      {
-        id: '2',
-        title: 'Recently Added', 
-        artist_id: '1',
-        cover_url: null
-      },
-      {
-        id: '3',
-        title: 'My Playlist',
-        artist_id: '1',
-        cover_url: null
-      }
-    ]
-    return NextResponse.json(fallbackAlbums)
+    // Return empty array as fallback
+    return NextResponse.json([])
   }
 }

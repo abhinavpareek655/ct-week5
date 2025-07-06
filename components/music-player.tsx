@@ -38,6 +38,17 @@ export interface Playlist {
   song_count?: number
 }
 
+// Album type
+export interface Album {
+  id: string
+  title: string
+  artist: string
+  cover_url?: string
+  genre?: string
+  release_date?: string
+  song_count?: number
+}
+
 interface MusicPlayerContextType {
   currentSong: Song | null
   isPlaying: boolean
@@ -54,8 +65,12 @@ interface MusicPlayerContextType {
   currentPlaylist: Playlist | null
   playlistSongs: Song[]
   currentSongIndex: number
+  currentAlbum: Album | null
+  albumSongs: Song[]
+  currentAlbumSongIndex: number
   playSong: (song: Song) => void
   playPlaylist: (playlist: Playlist) => void
+  playAlbum: (album: Album) => void
   playNextSong: () => void
   playPreviousSong: () => void
   pause: () => void
@@ -94,6 +109,9 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null)
   const [playlistSongs, setPlaylistSongs] = useState<Song[]>([])
   const [currentSongIndex, setCurrentSongIndex] = useState(0)
+  const [currentAlbum, setCurrentAlbum] = useState<Album | null>(null)
+  const [albumSongs, setAlbumSongs] = useState<Song[]>([])
+  const [currentAlbumSongIndex, setCurrentAlbumSongIndex] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
   
@@ -166,6 +184,26 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         
         setCurrentSongIndex(nextIndex)
         playSong(playlistSongs[nextIndex])
+      } else if (currentAlbum && albumSongs.length > 0) {
+        // Handle album playback
+        let nextIndex = currentAlbumSongIndex + 1
+        
+        if (nextIndex >= albumSongs.length) {
+          if (isLooping) {
+            nextIndex = 0
+          } else {
+            // End of album
+            setIsPlaying(false)
+            setCurrentSong(null)
+            setCurrentAlbum(null)
+            setAlbumSongs([])
+            setCurrentAlbumSongIndex(0)
+            return
+          }
+        }
+        
+        setCurrentAlbumSongIndex(nextIndex)
+        playSong(albumSongs[nextIndex])
       } else if (isLooping) {
         // Loop the current song
         audio.currentTime = 0
@@ -388,6 +426,60 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       toast({
         title: 'Error',
         description: 'Failed to load playlist',
+        variant: 'destructive',
+      })
+    }
+  }, [playSong, toast, isShuffling])
+
+  const playAlbum = useCallback(async (album: Album) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      }
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+
+      const response = await fetch(`/api/albums/${album.id}`, {
+        headers
+      })
+      
+      if (response.ok) {
+        const albumData = await response.json()
+        const songs = albumData.songs || []
+        
+        if (songs.length === 0) {
+          toast({
+            title: "Empty Album",
+            description: "This album has no songs to play",
+            variant: "destructive",
+          })
+          return
+        }
+
+        setCurrentAlbum(album)
+        
+        // Shuffle songs if shuffle is enabled
+        const shuffledSongs = isShuffling ? [...songs].sort(() => Math.random() - 0.5) : songs
+        setAlbumSongs(shuffledSongs)
+        setCurrentAlbumSongIndex(0)
+        
+        // Start playing the first song
+        await playSong(shuffledSongs[0])
+        
+        toast({
+          title: "Playing Album",
+          description: `Now playing ${album.title}`,
+        })
+      } else {
+        throw new Error('Failed to load album')
+      }
+    } catch (error) {
+      console.error('Error playing album:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load album',
         variant: 'destructive',
       })
     }
@@ -636,7 +728,8 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       volume, isMuted, isLooping, isShuffling, isFullscreen, isLiked,
       playlists, playlistsLoading,
       currentPlaylist, playlistSongs, currentSongIndex,
-      playSong, playPlaylist, playNextSong, playPreviousSong,
+      currentAlbum, albumSongs, currentAlbumSongIndex,
+      playSong, playPlaylist, playAlbum, playNextSong, playPreviousSong,
       pause, resume, seekTo, setVolumeLevel, toggleMute,
       skipBack, skipForward, toggleLoop, toggleShuffle, toggleFullscreen,
       toggleLike, addToPlaylist, refreshRecentlyPlayed, refreshPlaylists
