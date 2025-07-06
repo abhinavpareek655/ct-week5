@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Mail, ShieldCheck } from "lucide-react";
 
-export default function VerifyPage() {
+function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") || "";
@@ -121,5 +121,26 @@ export default function VerifyPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#18181b] via-[#232323] to-[#18181b]">
+        <div className="w-full max-w-md mx-auto px-4 py-12">
+          <Card className="bg-[#18181b]/90 border-0 shadow-2xl">
+            <CardHeader className="text-center space-y-2">
+              <div className="flex justify-center mb-2">
+                <ShieldCheck className="h-10 w-10 text-green-400" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-white">Loading...</CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    }>
+      <VerifyForm />
+    </Suspense>
   );
 } 
